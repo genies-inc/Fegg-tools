@@ -6,7 +6,7 @@
  * 
  * @access public
  * @author Genies, Inc.
- * @version 1.0.9
+ * @version 1.1.0
  */
 class Tool_File
 {
@@ -173,6 +173,9 @@ class Tool_File
     function removeExpiredFile($path, $min)
     {
         $now = time();
+
+        // 末尾にスラッシュを付与
+        $path = rtrim($path, '/') . '/';
 
         if (!($dir = @opendir($path))) {
             return false;
