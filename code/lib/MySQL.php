@@ -8,7 +8,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 0.9.1
+ * @version 0.9.2
  */
 
 class MySQL
@@ -152,15 +152,15 @@ class MySQL
 
                         // 代入形式
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
-                        $tempQuery1 .= $match[1] . '= ?';
 
                         switch ($match[2]) {
                             case 'now()':
+                                $tempQuery1 .= $match[1] . '= ?';
                                 $this->_parameter[] = $this->_app->getDatetime();
                                 break;
 
                             default:
-                                $this->_parameter[] = $match[2];
+                                $tempQuery1 .= $match[0];
                                 break;
                         }
 
