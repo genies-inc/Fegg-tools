@@ -1,20 +1,20 @@
 <?php
 /**
  * MySQLクラス
- * 
+ *
  * MySQLの操作に必要な処理を提供するクラス。
  * 関連ファイル：mysql_config.php
  *               mysql_regular_query.php
- * 
+ *
  * @access public
  * @author Genies, Inc.
- * @version 0.9.0
+ * @version 0.9.1
  */
 
 class MySQL
 {
     private $_app;
-    
+
     private $_connect;
     private $_connectFlag;
     private $_query;
@@ -22,7 +22,7 @@ class MySQL
     private $_record;
     private $_returnCode;
     private $_affectedRows;
-    
+
     private $_items;
     private $_table;
     private $_where;
@@ -32,8 +32,8 @@ class MySQL
     private $_limit;
     private $_regularUseQueryFlag;
     private $_regularUseQueryFlagForTable;
-    
-    
+
+
     /**
      *  constructor
      */
@@ -49,22 +49,22 @@ class MySQL
         // 初期化
         $this->_initQuery();
     }
- 
+
 
     /**
      * クエリー構築
-     * @param string $queryType 
+     * @param string $queryType
      */
     function _buildQuery($queryType) {
-        
+
         $this->_query = '';
         $this->_parameter = array();
-        
+
         // 常用クエリーの設定
         if ($this->_regularUseQueryFlag) {
             $this->_setRegularUseQuery($queryType);
         }
-        
+
         $queryType = strtoupper($queryType);
         $query = '';
         switch ($queryType) {
@@ -76,7 +76,7 @@ class MySQL
                 $this->_query = $query;
                 $this->_parameter = $this->_whereValues;
                 break;
-                
+
             case 'SELECT':
                 $query .= 'Select ';
                 $tempQuery = '';
@@ -89,24 +89,24 @@ class MySQL
                 } else {
                     $query .= '*';
                 }
-                
+
                 $query .= ' From `' . $this->_table . '` ';
                 $query .= isset($this->_where) ? 'Where ' . $this->_where : '';
                 $query .= isset($this->_group) ? ' Group By ' . $this->_group : '';
                 $query .= isset($this->_order) ? ' Order By ' . $this->_order : '';
                 $query .= isset($this->_limit) ? ' Limit ' . $this->_limit : '';
-                
+
                 $this->_query = $query;
                 $this->_parameter = $this->_whereValues;
                 break;
-            
+
             case 'INSERT':
                 $query .= 'Insert Into `' . $this->_table . '` ';
                 $tempQuery1 = '';
                 $tempQuery2 = '';
                 foreach($this->_items as $key => $value) {
                     if (preg_match('/([^=]+)\s*=\s*([\w\(\)\s\+]+)/i', $key, $match)) {
-                        
+
                         // 代入形式
                         switch (true) {
                             case (preg_match('/^now/i', $match[2])):
@@ -116,7 +116,7 @@ class MySQL
                                 $tempQuery2 .= '?';
                                 $this->_parameter[] = $this->_app->getDatetime();
                                 break;
-                            
+
                             default:
                                 if ($tempQuery1) { $tempQuery1 .= ", "; }
                                 $tempQuery1 .= $match[1];
@@ -125,31 +125,31 @@ class MySQL
                                 $this->_parameter[] = $match[2];
                                 break;
                         }
-                        
+
                     } else {
-                        
+
                         // 項目名のみ
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
                         $tempQuery1 .= $key;
 
                         if ($tempQuery2) { $tempQuery2 .= ", "; }
                         $tempQuery2 .= '?';
-                    
+
                         $this->_parameter[] = $value;
                     }
                 }
-                
+
                 $query .= '(' . $tempQuery1 . ') Values (' . $tempQuery2 . ')';
 
                 $this->_query = $query;
                 break;
-            
+
             case 'UPDATE':
                 $query .= 'Update `' . $this->_table . '` Set ';
                 $tempQuery1 = '';
                 foreach($this->_items as $key => $value) {
-                    if (preg_match('/([^=]+)\s*=\s*([\w\(\)]+)/i', $key, $match)) {
-                        
+                    if (preg_match('/([^=]+)\s*=\s*([\w\(\)\+0-9\s]+)/i', $key, $match)) {
+
                         // 代入形式
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
                         $tempQuery1 .= $match[1] . '= ?';
@@ -158,14 +158,14 @@ class MySQL
                             case 'now()':
                                 $this->_parameter[] = $this->_app->getDatetime();
                                 break;
-                            
+
                             default:
                                 $this->_parameter[] = $match[2];
                                 break;
                         }
-                        
+
                     } else {
-                        
+
                         // 項目名のみ
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
                         $tempQuery1 .= $key . '= ?';
@@ -184,27 +184,27 @@ class MySQL
 
                 $this->_query = $query;
                 break;
-            
+
             case 'DELETE':
-                
+
                 $query = 'Delete ';
                 $query .= 'From ' . $this->_table . ' ';
                 $query .= $this->_where ? 'Where ' . $this->_where : '';
                 foreach ($this->_whereValues as $key => $value) {
                     $this->_parameter[] = $value;
                 }
-          
+
                 $this->_query = $query;
                 break;
-                
+
             case 'TRUNCATE':
-                
+
                 $query = 'Truncate ' . $this->_table . ' ';
-          
+
                 $this->_query = $query;
                 break;
         }
-        
+
         $returnArray = array();
         $returnArray[0] = $this->_query;
         $returnArray[1] = $this->_parameter;
@@ -223,14 +223,14 @@ class MySQL
             $this->_connect = null;
         }
     }
-    
-    
+
+
     /**
      * MySQLサーバーへの接続確立
      * @param string $server MySQLサーバー（ポート指定例：localhost:3306）
      * @param string $user ユーザー
      * @param string $password パスワード
-     * @param string $database データベース 
+     * @param string $database データベース
      * @param string $port ポート番号
      */
     function _connect($server, $user, $password, $database, $port = '')
@@ -249,10 +249,10 @@ class MySQL
             echo "No Database: $database";
             exit;
         }
-        
+
         mysql_set_charset("UTF8", $this->_connect);
     }
-    
+
 
     /**
      * エスケープ
@@ -268,7 +268,7 @@ class MySQL
         }
         return $data;
     }
-    
+
 
     /**
      * エラー処理
@@ -282,8 +282,8 @@ class MySQL
         }
         exit;
     }
-    
-    
+
+
     /**
      * クエリ実行
      * @param string $query SQL文（パラメーター部分は?で表記）
@@ -315,9 +315,9 @@ class MySQL
         } else { $this->_error($query); }
 
         return $this->_affectedRows;
-    }   
-    
-    
+    }
+
+
     /**
      * データ取得
      * @param string $query SQL文（パラメーター部分は?で表記）
@@ -334,7 +334,7 @@ class MySQL
             $query = str_replace('?', '%s', $query);
             $query = vsprintf($query, $parameter);
         }
-        
+
         // 結果格納変数の初期化
         $this->_affectedRows = 0;
         $record = array();
@@ -343,7 +343,7 @@ class MySQL
         if (!$result = mysql_query($query, $this->_connect)) {
             $this->_error($query);
         }
-        
+
         if ($result) {
 
             // 結果行数の格納
@@ -353,15 +353,15 @@ class MySQL
             while ($data = mysql_fetch_array($result, MYSQL_ASSOC)) {
                 $record[] = $data;
             }
-            
+
         } else { $this->_error($query); }
 
         // メモリを解放
         mysql_free_result($result);
-        
+
         return $record;
     }
-    
+
 
     /**
      * 初期化
@@ -379,13 +379,13 @@ class MySQL
 
         // 接続フラグ
         $this->_connectFlag = false;
-        
+
         // 常用クエリーフラグ
         $this->_regularUseQueryFlag = true;
         $this->_regularUseQueryFlagForTable = true;
     }
-    
-    
+
+
     /**
      * 連想配列判定
      * @param array 判定対象の配列
@@ -396,14 +396,14 @@ class MySQL
         // 連想配列の先頭キーに0は使えず、配列の先頭は0という前提
         reset($array);
         list($key) = each($array);
-        
+
         return $key !== 0;
     }
-    
+
 
     /**
      * 常用クエリーの設定
-     * @param string $queryType 
+     * @param string $queryType
      */
     function _setRegularUseQuery($queryType)
     {
@@ -435,7 +435,7 @@ class MySQL
 
         // テーブルに関わらず付加するクエリー
         if ($this->_regularUseQueryFlag) {
-            
+
             // 項目
             if (isset($this->_app->config['mysql_regular_query']['regular_use'][$queryType]['item']) && $this->_app->config['mysql_regular_query']['regular_use'][$queryType]['item']) {
                 $this->setItem($this->_app->config['mysql_regular_query']['regular_use'][$queryType]['item']);
@@ -460,8 +460,8 @@ class MySQL
             }
         }
     }
-    
-    
+
+
     /**
      * 取得したレコードを返す
      * @param string $index 配列のキーにする項目ID
@@ -478,10 +478,10 @@ class MySQL
         } else {
             $record = $this->_record;
         }
-        
+
         return $record;
     }
-    
+
 
     /**
      * データ件数カウント
@@ -501,11 +501,11 @@ class MySQL
 
         // クエリーを実行して、論理的に非接続状態にする
         $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * データ削除
      * @param string $table
@@ -517,18 +517,18 @@ class MySQL
         if (!$this->_connectFlag) {
             $this->masterServer();
         }
-        
+
         // query構築
         $this->_table = $table;
         $this->_buildQuery('delete');
-        
+
         // クエリーを実行して、論理的に非接続状態にする
         $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
     }
-    
+
 
     /**
      * クエリー実行
@@ -538,7 +538,7 @@ class MySQL
     {
         // クエリ種類の判定
         if (preg_match('/^\s*select.+/i', $this->_query)) {
-            
+
             // データベースが明示的に指定されていなければ Slave へ接続
             if (!$this->_connectFlag) {
                 $this->slaveServer();
@@ -546,9 +546,9 @@ class MySQL
 
             // クエリーを実行して、論理的に非接続状態にする
             $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
-            
+
         } else {
-            
+
             // データベースが明示的に指定されていなければ Master へ接続
             if (!$this->_connectFlag) {
                 $this->masterServer();
@@ -556,14 +556,14 @@ class MySQL
 
             // クエリーを実行して、論理的に非接続状態にする
             $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
-            
+
         }
         $this->_initQuery();
 
         return $this;
     }
-    
-    
+
+
     /**
      * 取得行数、結果行数の取得
      * @return integer 結果行数
@@ -572,8 +572,8 @@ class MySQL
     {
         $this->_affectedRows;
     }
-    
-    
+
+
     /**
      * 直近で登録されたオートナンバーの取得
      * @return Integer 取得できなかったときは0を返す
@@ -582,14 +582,14 @@ class MySQL
     {
         $this->masterServer();
         $record = $this->_fetchAll('SELECT LAST_INSERT_ID()', array());
-        
+
         if (isset($record[0]["LAST_INSERT_ID()"])) {
             return $record[0]["LAST_INSERT_ID()"];
         } else {
             return 0;
         }
     }
-    
+
 
     /**
      * 最後に実行したクエリーの取得
@@ -598,25 +598,25 @@ class MySQL
     {
         $query = str_replace('?', '%s', $this->_query);
         $query = vsprintf($query, $this->_parameter);
-        
+
         return $query;
     }
-    
+
 
     /**
      * リターンコード取得
-     * @return int 
+     * @return int
      */
     function getReturnCode()
     {
         return $this->_returnCode;
     }
-    
-    
+
+
     /**
      * 指定した項目だけの配列を取得
      * @param string $index
-     * @return array 
+     * @return array
      */
     function id($index)
     {
@@ -625,14 +625,14 @@ class MySQL
         foreach ($tempRecord as $key => $value) {
             $ids[] = $value[$index];
         }
-        
+
         return $ids;
     }
-    
-    
+
+
     /**
      * データ追加
-     * @param string $table 
+     * @param string $table
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function insert($table)
@@ -652,8 +652,8 @@ class MySQL
 
         return $this;
     }
-    
-    
+
+
     /**
      * マスターデータベースへの接続
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
@@ -668,14 +668,14 @@ class MySQL
                         $this->_app->config['mysql_config']['master']['port']
                );
         $this->_connectFlag = true;
-        
+
         return $this;
     }
 
 
     /**
      * 取得したレコードの１件目を返す
-     * @return array 
+     * @return array
      */
     function one()
     {
@@ -686,8 +686,8 @@ class MySQL
         }
         return array_shift($record);
     }
-    
-    
+
+
     /**
      * データ取得
      * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：setQueryメソッドによるquery設定
@@ -708,24 +708,24 @@ class MySQL
         // クエリーを実行して、論理的に非接続状態にする
         $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
         $this->_initQuery();
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * グループ設定
-     * @param string $query 
+     * @param string $query
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function setGroup($query)
     {
         $this->_group .= $query;
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * 操作項目設定
      * @param string $query 複数の場合カンマ区切り
@@ -762,7 +762,7 @@ class MySQL
                 }
 
             }
-        } else {            
+        } else {
             // パラメーター省略時は項目名のみ処理
             $items = explode(',', $query);
             foreach ($items as $value) {
@@ -772,50 +772,50 @@ class MySQL
 
         return $this;
     }
-    
+
 
     /**
      * 取得件数設定
      * @param int $limit
-     * @param int $offset 
+     * @param int $offset
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function setLimit($limit, $offset = 0)
     {
         $this->_limit = $offset . ',' . $limit;
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * ソート順設定
-     * @param string $query 
+     * @param string $query
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function setOrder($query)
     {
         $this->_order .= $query;
-        
+
         return $this;
     }
-    
+
 
     /**
      * クエリー設定
      * @param string $query
-     * @param array $parameter 
+     * @param array $parameter
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function setQuery($query, $parameter = array())
     {
         $this->_query = $query;
         $this->_parameter = $parameter;
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * 条件式設定
      */
@@ -824,34 +824,34 @@ class MySQL
         // 引数取得
         $numberOfArgs = func_num_args();
         $parameters = func_get_args();
-        
+
         // クエリ取得
         $query = array_shift($parameters);
-        
+
         // パラメータ処理
         if ($numberOfArgs == 1) {
-            
+
             // クエリのみ
             $this->_where .= ' ' . $query;
-            
+
         } else {
-            
+
             // パラメーターあり
             $index = 0;
             foreach ($parameters as $parameter) {
                 if (!is_array($parameter)) {
-                    
+
                     $this->_whereValues[] = $parameter;
                     $index = $index + 1;
-                    
+
                 } else {
-                    
+
                     // パラメーターが配列の場合以下の変換を行う
-                    // = --> in, 
+                    // = --> in,
                     // in --> カンマ区切り
                     // <> --> not in
                     // like --> or 区切り
-                    
+
                     // 変換位置の確定
                     preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
                     $position = $matches[0][$index][1];
@@ -859,7 +859,7 @@ class MySQL
                     // 演算子の確定
                     preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
                     $operator = $matches[2][$index];
-                    
+
                     // 対象箇所までのクエリー取得
                     $convertedQueryFrontPart = substr($query, 0, $position);
                     if ($position > 0) {
@@ -867,16 +867,16 @@ class MySQL
                     } else {
                         $convertedQuery = $query;
                     }
-                    
+
                     // 項目名取得
                     $pattern = '/^\s*\w+/i';
                     preg_match($pattern, $convertedQuery, $matches);
                     $itemName = $matches[0];
                     $itemName = '`' . $itemName . '`';
-                    
+
                     // 対象箇所からのクエリー取得
                     $convertedQuery = preg_replace('/^\s*\w+\s*' . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
-                    
+
                     $tempQuery = '';
                     $operator = strtolower($operator);
                     switch ($operator) {
@@ -892,7 +892,7 @@ class MySQL
                             $convertedQuery = $convertedQueryFrontPart . $itemName . ' in (' . $tempQuery . ') ' . $convertedQuery;
                             $index = $index + 1;
                             break;
-                        
+
                         case '<>':
                             foreach ($parameter as $key => $value) {
                                 if ($tempQuery) {
@@ -904,7 +904,7 @@ class MySQL
                             $convertedQuery = $convertedQueryFrontPart . $itemName . ' not in (' . $tempQuery . ') ' . $convertedQuery;
                             $index = $index + 1;
                             break;
-                        
+
                         case 'like':
                             $tempQuery = '';
                             foreach ($parameter as $key => $value) {
@@ -917,21 +917,21 @@ class MySQL
                             $convertedQuery = $convertedQueryFrontPart . '(' . $tempQuery . ') ' . $convertedQuery;
                             $index = $index + 1;
                             break;
-                        
+
                     }
                     $query = $convertedQuery;
                 }
             }
             $this->_where .= ' ' . $query;
         }
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * 1次元配列での取得
-     * @return array 
+     * @return array
      */
     function simpleArray($keyName, $valueName)
     {
@@ -940,11 +940,11 @@ class MySQL
         foreach ($tempRecord as $key => $value) {
             $record[$value[$keyName]] = $value[$valueName];
         }
-        
+
         return $record;
     }
-    
-    
+
+
     /**
      * スレーブサーバーへの接続
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
@@ -959,7 +959,7 @@ class MySQL
             mt_srand();
             $serverNo = mt_rand(0, $maxServer);
         }
-        
+
         // 接続
         $this->_connect($this->_app->config['mysql_config']['slave'][$serverNo]['server'],
                         $this->_app->config['mysql_config']['slave'][$serverNo]['username'],
@@ -968,11 +968,11 @@ class MySQL
                         $this->_app->config['mysql_config']['slave'][$serverNo]['port']
                );
         $this->_connectFlag = true;
-        
+
         return $this;
     }
-    
-    
+
+
     function truncate($table)
     {
         // データベースが明示的に指定されていなければ Slave へ接続
@@ -990,8 +990,8 @@ class MySQL
 
         return $this;
     }
-    
-    
+
+
     /**
      * 常用クエリーを設定しない
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
@@ -999,11 +999,11 @@ class MySQL
     function unsetRegularUseQuery()
     {
         $this->_regularUseQueryFlag = false;
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * 各テーブルの常用クエリーを設定しない
      * @return MySQL メソッドチェーンに対応するため自身のオブジェクト($this)を返す
@@ -1011,11 +1011,11 @@ class MySQL
     function unsetRegularUseQueryForTable()
     {
         $this->_regularUseQueryFlagForTable = false;
-        
+
         return $this;
     }
-    
-    
+
+
     /**
      * データ取得
      * @param string $table
@@ -1027,16 +1027,16 @@ class MySQL
         if (!$this->_connectFlag) {
             $this->masterServer();
         }
-        
+
         // query構築
         $this->_table = $table;
         $this->_buildQuery('update');
-        
+
         // クエリーを実行して、論理的に非接続状態にする
         $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
-    }    
+    }
 }
 /* End of file: MySQL.php */
