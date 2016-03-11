@@ -8,7 +8,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 0.9.2
+ * @version 0.9.3
  */
 
 class MySQL
@@ -263,7 +263,7 @@ class MySQL
         // 格納用に文字をエスケープ（標準関数での非対応文字は別途処理）
         foreach ($data as $key => $value) {
             $data[$key] = str_replace(array('\\', '%', '_'), array('\\\\', '\%', '\_'), $data[$key]);
-            $data[$key] = mysql_real_escape_string($value);
+            $data[$key] = mysql_real_escape_string($data[$key]);
             $data[$key] = "'" . $data[$key] . "'";
         }
         return $data;
