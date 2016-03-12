@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 class DB
@@ -245,6 +245,9 @@ class DB
                 $this->_connect = new PDO($dsn, $user, $password);
             }
 
+            // 例外をスロー
+            $this->_connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
             // 静的プレースホルダを指定
             $this->_connect->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
@@ -285,11 +288,17 @@ class DB
         try {
             $pdoStatement = $this->_connect->prepare($query);
 
-            if (!is_array($parameter)) {
-                $result = $pdoStatement->execute();
+            if ($pdoStatement) {
+                if (!is_array($parameter)) {
+                    $result = $pdoStatement->execute();
+                } else {
+                    $result = $pdoStatement->execute($parameter);
+                }
             } else {
-                $result = $pdoStatement->execute($parameter);
+                echo 'No PDOException. Checkpoint 2.';
+                $this->_error($query);
             }
+
         } catch(PDOException $e) {
             $this->_error($query);
         }
@@ -321,11 +330,17 @@ class DB
         try {
             $pdoStatement = $this->_connect->prepare($query);
 
-            if (!is_array($parameter)) {
-                $result = $pdoStatement->execute();
+            if ($pdoStatement) {
+                if (!is_array($parameter)) {
+                    $result = $pdoStatement->execute();
+                } else {
+                    $result = $pdoStatement->execute($parameter);
+                }
             } else {
-                $result = $pdoStatement->execute($parameter);
+                echo 'No PDOException. Checkpoint 1.';
+                $this->_error($query);
             }
+
         } catch(PDOException $e) {
             $this->_error($query);
         }
@@ -336,7 +351,7 @@ class DB
             $this->_affectedRows = $pdoStatement->rowCount();
 
             // 取得行数文繰り返し$recordに格納
-            $record = $pdoStatement->fetchAll();
+            $record = $pdoStatement->fetchAll(PDO::FETCH_ASSOC);
 
         } else { $this->_error($query); }
 
@@ -511,6 +526,28 @@ class DB
         $this->_initQuery();
 
         return $this;
+    }
+
+
+    /**
+     * Like検索キーワードのエスケープ
+     * Like検索で[%][_]などを含む文字を部分一致で検索できるように置換する
+     * @param  String $keyword 置換前検索文字列
+     * @param  String $front 前方一致パラメータ
+     * @param  String $back 後方一致パラメータ
+     * @param  String $escapeLetter エスケープ文字
+     * @return String 置換後検索文字列
+     */
+    function escapeLikeKey($keyword, $front = '', $back = '', $escapeLetter = '!')
+    {
+        $replacedKeyword = preg_replace('/(?=[!_%])/', '!', $keyword);
+        if ($keyword <> $replacedKeyword) {
+            $replacedKeyword = $front . $replacedKeyword . $back . ' Escape ' . $escapeLetter;
+        } else {
+            $replacedKeyword = $front . $replacedKeyword . $back;
+        }
+
+        return $replacedKeyword;
     }
 
 
@@ -710,7 +747,17 @@ class DB
 
     /**
      * 操作項目設定
-     * @param string $query 複数の場合カンマ区切り
+     *
+     * Select, Updateなどの対象項目を設定するためのメソッドで３通りの指定が可能
+     * １：文字列のみでの指定
+     *     setItem('item1, item2')
+     *     setItem('item1 = 1, item2 = 2')
+     *
+     * ２：文字列とパラメーターによる指定
+     *     setItem('item1, item2', array('item1' => 1, 'item2' => 2))
+     *     setItem('item1, item2', array(1, 2))
+     *
+     * @param mixed $query 複数項目の場合カンマ区切り、連想配列にも対応（パラメーターは使用されない）
      * @param mixed $parameter 連想配列の場合は$queryで指定した項目名と一致するもの、配列の場合は左から順に値を使用
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
     */
@@ -745,6 +792,7 @@ class DB
 
             }
         } else {
+
             // パラメーター省略時は項目名のみ処理
             $items = explode(',', $query);
             foreach ($items as $value) {
