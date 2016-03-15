@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.0.1
+ * @version 1.1.1
  */
 
 class DB
@@ -410,7 +410,7 @@ class DB
         if ($this->_regularUseQueryFlagForTable) {
             // 項目
             if (isset($this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']) && $this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']) {
-                $this->setItem($this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']);
+                $this->item($this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']);
             }
 
             // 条件
@@ -419,7 +419,7 @@ class DB
                 if ($this->_where) {
                     $conjunction = ' And ';
                 }
-                $this->setWhere($conjunction . $this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['where']);
+                $this->where($conjunction . $this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['where']);
             }
 
             // 並び順
@@ -428,7 +428,7 @@ class DB
                 if ($this->_order) {
                     $conjunction = ' ,';
                 }
-                $this->setOrder($conjunction . $this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['order']);
+                $this->order($conjunction . $this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['order']);
             }
         }
 
@@ -437,7 +437,7 @@ class DB
 
             // 項目
             if (isset($this->_app->config['db_regular_query']['regular_use'][$queryType]['item']) && $this->_app->config['db_regular_query']['regular_use'][$queryType]['item']) {
-                $this->setItem($this->_app->config['db_regular_query']['regular_use'][$queryType]['item']);
+                $this->item($this->_app->config['db_regular_query']['regular_use'][$queryType]['item']);
             }
 
             // 条件
@@ -446,7 +446,7 @@ class DB
                 if ($this->_where) {
                     $conjunction = ' And ';
                 }
-                $this->setWhere($conjunction . $this->_app->config['db_regular_query']['regular_use'][$queryType]['where']);
+                $this->where($conjunction . $this->_app->config['db_regular_query']['regular_use'][$queryType]['where']);
             }
 
             // 並び順
@@ -455,7 +455,7 @@ class DB
                 if ($this->_order) {
                     $conjunction = ' ,';
                 }
-                $this->setOrder($conjunction . $this->_app->config['db_regular_query']['regular_use'][$queryType]['order']);
+                $this->order($conjunction . $this->_app->config['db_regular_query']['regular_use'][$queryType]['order']);
             }
         }
     }
@@ -484,7 +484,7 @@ class DB
 
     /**
      * データ件数カウント
-     * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：setQueryメソッドによるquery設定
+     * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：queryメソッドによるquery設定
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function count($table)
@@ -635,6 +635,19 @@ class DB
 
 
     /**
+     * グループ設定
+     * @param string $query
+     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+     */
+    function group($query)
+    {
+        $this->_group .= $query;
+
+        return $this;
+    }
+
+
+    /**
      * 指定した項目だけの配列を取得
      * @param string $index
      * @return array
@@ -676,92 +689,22 @@ class DB
 
 
     /**
-     * マスターデータベースへの接続
-     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
-     */
-    function masterServer()
-    {
-        // 接続
-        $this->_connect($this->_app->config['db_config']['master']['dsn'],
-                        $this->_app->config['db_config']['master']['username'],
-                        $this->_app->config['db_config']['master']['password']
-               );
-        $this->_connectFlag = true;
-
-        return $this;
-    }
-
-
-    /**
-     * 取得したレコードの１件目を返す
-     * @return array
-     */
-    function one()
-    {
-        if (is_array($this->_record)) {
-            $record = $this->_record;
-        } else {
-            $record = array();
-        }
-        return array_shift($record);
-    }
-
-
-    /**
-     * データ取得
-     * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：setQueryメソッドによるquery設定
-     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
-
-     */
-    function select($table)
-    {
-        // データベースが明示的に指定されていなければ Slave へ接続
-        if (!$this->_connectFlag) {
-            $this->slaveServer();
-        }
-
-        // テーブル名が指定されているときはメソッドで指定された値でquery構築
-        $this->_table = $table;
-        $this->_buildQuery('select');
-
-        // クエリーを実行して、論理的に非接続状態にする
-        $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
-        $this->_initQuery();
-
-        return $this;
-    }
-
-
-    /**
-     * グループ設定
-     * @param string $query
-     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
-     */
-    function setGroup($query)
-    {
-        $this->_group .= $query;
-
-        return $this;
-    }
-
-
-    /**
      * 操作項目設定
      *
      * Select, Updateなどの対象項目を設定するためのメソッドで３通りの指定が可能
      * １：文字列のみでの指定
-     *     setItem('item1, item2')
-     *     setItem('item1 = 1, item2 = 2')
+     *     item('item1, item2')
+     *     item('item1 = 1, item2 = 2')
      *
      * ２：文字列とパラメーターによる指定
-     *     setItem('item1, item2', array('item1' => 1, 'item2' => 2))
-     *     setItem('item1, item2', array(1, 2))
+     *     item('item1, item2', array('item1' => 1, 'item2' => 2))
+     *     item('item1, item2', array(1, 2))
      *
      * @param mixed $query 複数項目の場合カンマ区切り、連想配列にも対応（パラメーターは使用されない）
      * @param mixed $parameter 連想配列の場合は$queryで指定した項目名と一致するもの、配列の場合は左から順に値を使用
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
     */
-    function setItem($query, $parameter = '')
+    function item($query, $parameter = '')
     {
         if ($parameter) {
             if ($this->_isHash($parameter)) {
@@ -810,7 +753,7 @@ class DB
      * @param int $offset
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
-    function setLimit($limit, $offset = 0)
+    function limit($limit, $offset = 0)
     {
         $this->_limit = $offset . ',' . $limit;
 
@@ -819,11 +762,43 @@ class DB
 
 
     /**
+     * マスターデータベースへの接続
+     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+     */
+    function masterServer()
+    {
+        // 接続
+        $this->_connect($this->_app->config['db_config']['master']['dsn'],
+                        $this->_app->config['db_config']['master']['username'],
+                        $this->_app->config['db_config']['master']['password']
+               );
+        $this->_connectFlag = true;
+
+        return $this;
+    }
+
+
+    /**
+     * 取得したレコードの１件目を返す
+     * @return array
+     */
+    function one()
+    {
+        if (is_array($this->_record)) {
+            $record = $this->_record;
+        } else {
+            $record = array();
+        }
+        return array_shift($record);
+    }
+
+
+    /**
      * ソート順設定
      * @param string $query
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
-    function setOrder($query)
+    function order($query)
     {
         $this->_order .= $query;
 
@@ -837,7 +812,7 @@ class DB
      * @param array $parameter
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
-    function setQuery($query, $parameter = array())
+    function query($query, $parameter = array())
     {
         $this->_query = $query;
         $this->_parameter = $parameter;
@@ -847,113 +822,25 @@ class DB
 
 
     /**
-     * 条件式設定
+     * データ取得
+     * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：queryメソッドによるquery設定
+     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+
      */
-    function setWhere()
+    function select($table)
     {
-        // 引数取得
-        $numberOfArgs = func_num_args();
-        $parameters = func_get_args();
-
-        // クエリ取得
-        $query = array_shift($parameters);
-
-        // パラメータ処理
-        if ($numberOfArgs == 1) {
-
-            // クエリのみ
-            $this->_where .= ' ' . $query;
-
-        } else {
-
-            // パラメーターあり
-            $index = 0;
-            foreach ($parameters as $parameter) {
-                if (!is_array($parameter)) {
-
-                    $this->_whereValues[] = $parameter;
-                    $index = $index + 1;
-
-                } else {
-
-                    // パラメーターが配列の場合以下の変換を行う
-                    // = --> in,
-                    // in --> カンマ区切り
-                    // <> --> not in
-                    // like --> or 区切り
-
-                    // 変換位置の確定
-                    preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
-                    $position = $matches[0][$index][1];
-
-                    // 演算子の確定
-                    preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
-                    $operator = $matches[2][$index];
-
-                    // 対象箇所までのクエリー取得
-                    $convertedQueryFrontPart = substr($query, 0, $position);
-                    if ($position > 0) {
-                        $convertedQuery = substr($query, $position);
-                    } else {
-                        $convertedQuery = $query;
-                    }
-
-                    // 項目名取得
-                    $pattern = '/^\s*\w+/i';
-                    preg_match($pattern, $convertedQuery, $matches);
-                    $itemName = $matches[0];
-                    $itemName = '`' . $itemName . '`';
-
-                    // 対象箇所からのクエリー取得
-                    $convertedQuery = preg_replace('/^\s*\w+\s*' . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
-
-                    $tempQuery = '';
-                    $operator = strtolower($operator);
-                    switch ($operator) {
-                        case '=':
-                        case 'in':
-                            foreach ($parameter as $key => $value) {
-                                if ($tempQuery) {
-                                    $tempQuery .= ',';
-                                }
-                                $tempQuery .= '?';
-                                $this->_whereValues[] = $value;
-                            }
-                            $convertedQuery = $convertedQueryFrontPart . $itemName . ' in (' . $tempQuery . ') ' . $convertedQuery;
-                            $index = $index + 1;
-                            break;
-
-                        case '<>':
-                            foreach ($parameter as $key => $value) {
-                                if ($tempQuery) {
-                                    $tempQuery .= ',';
-                                }
-                                $tempQuery .= '?';
-                                $this->_whereValues[] = $value;
-                            }
-                            $convertedQuery = $convertedQueryFrontPart . $itemName . ' not in (' . $tempQuery . ') ' . $convertedQuery;
-                            $index = $index + 1;
-                            break;
-
-                        case 'like':
-                            $tempQuery = '';
-                            foreach ($parameter as $key => $value) {
-                                if ($tempQuery) {
-                                    $tempQuery .= 'or ';
-                                }
-                                $tempQuery .= $itemName . ' Like ? ';
-                                $this->_whereValues[] = $value;
-                            }
-                            $convertedQuery = $convertedQueryFrontPart . '(' . $tempQuery . ') ' . $convertedQuery;
-                            $index = $index + 1;
-                            break;
-
-                    }
-                    $query = $convertedQuery;
-                }
-            }
-            $this->_where .= ' ' . $query;
+        // データベースが明示的に指定されていなければ Slave へ接続
+        if (!$this->_connectFlag) {
+            $this->slaveServer();
         }
+
+        // テーブル名が指定されているときはメソッドで指定された値でquery構築
+        $this->_table = $table;
+        $this->_buildQuery('select');
+
+        // クエリーを実行して、論理的に非接続状態にする
+        $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
+        $this->_initQuery();
 
         return $this;
     }
@@ -1063,6 +950,119 @@ class DB
         // クエリーを実行して、論理的に非接続状態にする
         $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
         $this->_initQuery();
+
+        return $this;
+    }
+
+
+    /**
+     * 条件式設定
+     */
+    function where()
+    {
+        // 引数取得
+        $numberOfArgs = func_num_args();
+        $parameters = func_get_args();
+
+        // クエリ取得
+        $query = array_shift($parameters);
+
+        // パラメータ処理
+        if ($numberOfArgs == 1) {
+
+            // クエリのみ
+            $this->_where .= ' ' . $query;
+
+        } else {
+
+            // パラメーターあり
+            $index = 0;
+            foreach ($parameters as $parameter) {
+                if (!is_array($parameter)) {
+
+                    $this->_whereValues[] = $parameter;
+                    $index = $index + 1;
+
+                } else {
+
+                    // パラメーターが配列の場合以下の変換を行う
+                    // = --> in,
+                    // in --> カンマ区切り
+                    // <> --> not in
+                    // like --> or 区切り
+
+                    // 変換位置の確定
+                    preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
+                    $position = $matches[0][$index][1];
+
+                    // 演算子の確定
+                    preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
+                    $operator = $matches[2][$index];
+
+                    // 対象箇所までのクエリー取得
+                    $convertedQueryFrontPart = substr($query, 0, $position);
+                    if ($position > 0) {
+                        $convertedQuery = substr($query, $position);
+                    } else {
+                        $convertedQuery = $query;
+                    }
+
+                    // 項目名取得
+                    $pattern = '/^\s*\w+/i';
+                    preg_match($pattern, $convertedQuery, $matches);
+                    $itemName = $matches[0];
+                    $itemName = '`' . $itemName . '`';
+
+                    // 対象箇所からのクエリー取得
+                    $convertedQuery = preg_replace('/^\s*\w+\s*' . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
+
+                    $tempQuery = '';
+                    $operator = strtolower($operator);
+                    switch ($operator) {
+                        case '=':
+                        case 'in':
+                            foreach ($parameter as $key => $value) {
+                                if ($tempQuery) {
+                                    $tempQuery .= ',';
+                                }
+                                $tempQuery .= '?';
+                                $this->_whereValues[] = $value;
+                            }
+                            $convertedQuery = $convertedQueryFrontPart . $itemName . ' in (' . $tempQuery . ') ' . $convertedQuery;
+                            $index = $index + 1;
+                            break;
+
+                        case '<>':
+                            foreach ($parameter as $key => $value) {
+                                if ($tempQuery) {
+                                    $tempQuery .= ',';
+                                }
+                                $tempQuery .= '?';
+                                $this->_whereValues[] = $value;
+                            }
+                            $convertedQuery = $convertedQueryFrontPart . $itemName . ' not in (' . $tempQuery . ') ' . $convertedQuery;
+                            $index = $index + 1;
+                            break;
+
+                        case 'like':
+                            $tempQuery = '';
+                            foreach ($parameter as $key => $value) {
+                                if ($tempQuery) {
+                                    $tempQuery .= 'or ';
+                                }
+                                $tempQuery .= $itemName . ' Like ? ';
+                                $this->_whereValues[] = $value;
+                            }
+                            $convertedQuery = $convertedQueryFrontPart . '(' . $tempQuery . ') ' . $convertedQuery;
+                            $index = $index + 1;
+                            break;
+
+                    }
+                    $query = $convertedQuery;
+                }
+            }
+            $this->_where .= ' ' . $query;
+        }
 
         return $this;
     }
