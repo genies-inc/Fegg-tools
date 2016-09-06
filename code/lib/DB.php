@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.1
+ * @version 1.1.2
  */
 
 class DB
@@ -24,6 +24,7 @@ class DB
     private $_record;
     private $_returnCode;
     private $_affectedRows;
+    private $_lastInsertId;
 
     private $_items;
     private $_table;
@@ -294,6 +295,7 @@ class DB
                 } else {
                     $result = $pdoStatement->execute($parameter);
                 }
+                $this->_lastInsertId = $this->_connect->lastInsertId();
             } else {
                 echo 'No PDOException. Checkpoint 2.';
                 $this->_error($query);
@@ -601,14 +603,7 @@ class DB
      */
     function getLastIndexId()
     {
-        $this->masterServer();
-        $record = $this->_fetchAll('SELECT LAST_INSERT_ID()', array());
-
-        if (isset($record[0]["LAST_INSERT_ID()"])) {
-            return $record[0]["LAST_INSERT_ID()"];
-        } else {
-            return 0;
-        }
+        return $this->_lastInsertId;
     }
 
 
@@ -957,6 +952,7 @@ class DB
 
     /**
      * 条件式設定
+     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function where()
     {
@@ -992,11 +988,11 @@ class DB
                     // like --> or 区切り
 
                     // 変換位置の確定
-                    preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
+                    preg_match_all('/(\w+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
                     $position = $matches[0][$index][1];
 
                     // 演算子の確定
-                    preg_match_all('/(\w+\s*(=|<|>|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
+                    preg_match_all('/(\w+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
                     $operator = $matches[2][$index];
 
                     // 対象箇所までのクエリー取得
