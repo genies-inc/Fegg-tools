@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.2
+ * @version 1.1.3
  */
 
 class DB
@@ -104,7 +104,8 @@ class DB
                 break;
 
             case 'INSERT':
-                $query .= 'Insert Into `' . $this->_table . '` ';
+            case 'REPLACE':
+                $query .= $queryType . ' Into `' . $this->_table . '` ';
                 $tempQuery1 = '';
                 $tempQuery2 = '';
                 foreach($this->_items as $key => $value) {
@@ -811,6 +812,30 @@ class DB
     {
         $this->_query = $query;
         $this->_parameter = $parameter;
+
+        return $this;
+    }
+
+
+    /**
+     * データリプレース
+     * @param string $table
+     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+     */
+    function replace($table)
+    {
+        // データベースが明示的に指定されていなければ Master へ接続
+        if (!$this->_connectFlag) {
+            $this->masterServer();
+        }
+
+        // query構築
+        $this->_table = $table;
+        $this->_buildQuery('replace');
+
+        // クエリーを実行して、論理的に非接続状態にする
+        $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
+        $this->_initQuery();
 
         return $this;
     }
