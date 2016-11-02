@@ -657,6 +657,7 @@ class Validation {
         if (!preg_match('|[^-/?:#@&=+$,\w.!~*;\'()%]|', $value)) {
 
             // URL形式を確認
+            if (preg_match('/^(https?|ftp)(:\/\/[0-9a-zA-Z\.\-\_\/\~\?&=%#:]+)$/', $value)) {
 
                 $flag = true;
 
