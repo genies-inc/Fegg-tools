@@ -1,21 +1,21 @@
 <?php
 /*
  * Validationクラス
- * 
+ *
  * 値をチェックするためのメソッドを提供
  * 関連ファイル： $validation_error_message.php
- * 
+ *
  * @access public
  * @author Genies, Inc.
- * @version 1.0.9
+ * @version 1.1.0
  */
 class Validation {
 
     private $_errorFlag;
     private $_errorMessage;
     private $_validationErrorMessage;
-    
-    
+
+
     /**
      * Constructor
      */
@@ -23,16 +23,16 @@ class Validation {
     {
         // 初期化
         $this->_errorFlag = false;
-        
+
         // if文でのエラー判定簡素化のために初期値をfalseに
         $this->_errorMessage = false;
-        
+
         // エラーメッセージ取得
         if ($languageCode) {
             $languageCode = '/' . $languageCode;
         }
         require(FEGG_CODE_DIR . "/config" . $languageCode . "/validation_error_message.php");
-        
+
         $this->_validationErrorMessage = $validation_error_message;
     }
 
@@ -54,11 +54,11 @@ class Validation {
             }
             $this->_errorMessage[$name] = vsprintf($this->_validationErrorMessage[$statement], $word);
         } else {
-            $this->_errorMessage[$name] = isset($this->_validationErrorMessage[$code]) ? $this->_validationErrorMessage[$code] : $code; 
+            $this->_errorMessage[$name] = isset($this->_validationErrorMessage[$code]) ? $this->_validationErrorMessage[$code] : $code;
         }
     }
-    
-    
+
+
     /**
      * 英数字（半角）検証
      * @param string $name 項目名
@@ -70,27 +70,27 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (preg_match('/^[0-9a-zA-Z]+$/', $value)) {
 
             $flag = true;
-            
+
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
-    
+
+
     /**
      * 日付検証
      * @param string $name 項目名
@@ -102,13 +102,13 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
 
         // 日付に含まれる/,-を除去
         $value = preg_replace('/[\/\-]/', '', $value);
-                    
+
         // 検証
         $flag = false;
         if (preg_match('/^[0-9]+$/', $value)) {
@@ -118,14 +118,14 @@ class Validation {
                 case 4:
                     $flag = true;
                     break;
-                
+
                 case 6:
                     $month = substr($value, 4, 2);
                     if ($month >= 1 && $month <= 12) {
                         $flag = true;
                     }
                     break;
-                    
+
                 case 8:
                     $year = substr($value, 0, 4);
                     $month = substr($value, 4, 2);
@@ -136,13 +136,13 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * EMail検証
@@ -155,26 +155,26 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (preg_match('/^[-\+\w](\\.?[-\+\w])*@[-\+\w]+(\.[-\+\w]+)*(\.[a-zA-Z]{2,4})$/', $value)) {
 
             $flag = true;
-            
+
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * エラーメッセージ取得
@@ -185,7 +185,7 @@ class Validation {
         return $this->_errorMessage;
     }
 
-    
+
     /**
      * 半角検証
      * @param string $name 項目名
@@ -197,26 +197,26 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (strlen($value) == mb_strlen($value)) {
 
             $flag = true;
-            
+
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * 実行時点でのエラー有無判定
@@ -226,7 +226,7 @@ class Validation {
     {
         return $this->_errorFlag;
     }
-    
+
 
     /**
      * カタカナ検証
@@ -240,10 +240,10 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
 
@@ -263,14 +263,14 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
-    
+
+
     /**
      * 文字数
      * @param string $name 項目名
@@ -283,33 +283,33 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
-        
-        $encode = mb_internal_encoding();   
+
+        $encode = mb_internal_encoding();
         mb_internal_encoding('UTF-8');
-        
+
         if (mb_strlen($value) == $length) {
-            
+
             $flag = true;
-            
+
         }
-        
-        mb_internal_encoding($encode);       
+
+        mb_internal_encoding($encode);
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
-        return $flag;        
+        return $flag;
     }
-    
-    
+
+
     /**
      * 最大バイト数
      * @param string $name 項目名
@@ -322,10 +322,10 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
 
@@ -336,14 +336,14 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
-    
+
+
     /**
      * 最大文字数
      * @param string $name 項目名
@@ -352,37 +352,37 @@ class Validation {
      * @param string $code エラーメッセージコード
      * @return boolean 正常： true / 異常： false
      */
-    public function maxlength($name, $value, $length, $code = '') 
+    public function maxlength($name, $value, $length, $code = '')
     {
 
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
-        
-        $encode = mb_internal_encoding();   
+
+        $encode = mb_internal_encoding();
         mb_internal_encoding('UTF-8');
-        
+
         if (mb_strlen($value) <= $length) {
-            
+
             $flag = true;
-            
+
         }
-        
-        mb_internal_encoding($encode);       
+
+        mb_internal_encoding($encode);
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * 最大文字数
@@ -392,38 +392,38 @@ class Validation {
      * @param string $code エラーメッセージコード
      * @return boolean 正常： true / 異常： false
      */
-    public function minlength($name, $value, $length, $code = '') 
+    public function minlength($name, $value, $length, $code = '')
     {
 
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
-        
-        $encode = mb_internal_encoding();   
+
+        $encode = mb_internal_encoding();
         mb_internal_encoding('UTF-8');
-        
+
         if (mb_strlen($value) >= $length) {
-            
+
             $flag = true;
-            
+
         }
-        
-        mb_internal_encoding($encode);       
+
+        mb_internal_encoding($encode);
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
-    
+
+
     /**
      * 数値
      * @param string $name 項目名
@@ -433,11 +433,11 @@ class Validation {
      * @param boolean $minusFlag マイナス値を許可
      * @return boolean 正常： true / 異常： false
      */
-    public function numeric($name, $value, $code = '', $decimalPointFlag = false, $minusFlag = false) 
+    public function numeric($name, $value, $code = '', $decimalPointFlag = false, $minusFlag = false)
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
 
@@ -447,23 +447,23 @@ class Validation {
         $pattern .= '[0-9]+';
         $pattern .= $decimalPointFlag ? '(\.[0-9]+){0,1}' : '';
         $pattern .= '$/';
-            
+
         // 検証
         $flag = false;
         if (preg_match($pattern, $value)) {
 
             $flag = true;
-            
+
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * パスワード
@@ -476,10 +476,10 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (!$mixedLettersFlag) {
@@ -495,15 +495,15 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
-        
+
     }
-    
-    
+
+
     /**
      * 必須入力
      * @param string $name 項目名
@@ -515,7 +515,7 @@ class Validation {
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (!is_array($value)) {
@@ -528,15 +528,15 @@ class Validation {
                 $flag = true;
             }
         }
-        
+
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * エラー設定（コード指定）
@@ -547,10 +547,10 @@ class Validation {
     {
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
-        $this->_setError($name, $code); 
+
+        $this->_setError($name, $code);
     }
-    
+
 
     /**
      * エラー設定（メッセージ指定）
@@ -560,10 +560,10 @@ class Validation {
     public function setErrorMessage($name, $message)
     {
         $this->_errorFlag = true;
-        $this->_errorMessage[$name] = $message; 
+        $this->_errorMessage[$name] = $message;
     }
 
-    
+
     /**
      * 電話番号
      * @param string $name 項目名
@@ -575,26 +575,26 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (preg_match('/^\+*[0-9\(\)\-]+[0-9]+$/', $value)) {
 
             $flag = true;
-            
+
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * 時間
@@ -603,17 +603,17 @@ class Validation {
      * @param string $code エラーメッセージコード
      * @return boolean 正常： true / 異常： false
      */
-    public function time($name, $value, $code = '') 
+    public function time($name, $value, $code = '')
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
 
         // 時間に含まれる:を除去
         $value = preg_replace('/[\:]/', '', $value);
-                    
+
         // 検証
         $flag = false;
         if (preg_match('/^[0-9]{4,4}$/', $value)) {
@@ -627,14 +627,14 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
-    
+
+
     /**
      * URL
      * @param string $name 項目名
@@ -642,36 +642,35 @@ class Validation {
      * @param string $code エラーメッセージコード
      * @return boolean 正常： true / 異常： false
      */
-    public function url($name, $value, $code = '') 
+    public function url($name, $value, $code = '')
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
-        
+
         // XSSを防ぐための確認
         if (!preg_match('|[^-/?:#@&=+$,\w.!~*;\'()%]|', $value)) {
-            
+
             // URL形式を確認
-            if (preg_match('/^(https?|ftp)(:\/\/[0-9a-zA-Z\.\-\_\/\~\?=%#:]+)$/', $value)) {
 
                 $flag = true;
-                
+
             }
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
+
 
     /**
      * アップロードファイル
@@ -683,25 +682,25 @@ class Validation {
     {
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
-        
+
         if (isset($_FILES[$name]) && !$_FILES[$name]['error'] && $_FILES[$name]['size'] > 0 ) {
 
             $flag = true;
-            
+
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
-        return $flag;        
+        return $flag;
     }
-    
-        
+
+
     /**
      * ユーザーID
      * @param string $name 項目名
@@ -713,10 +712,10 @@ class Validation {
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (preg_match('/^[0-9a-zA-Z\-\_\.]+$/', $value)) {
@@ -726,14 +725,14 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
     }
-    
-    
+
+
     /**
      * 郵便番号（日本形式のみ対応）
      * @param type $name 項目名
@@ -741,14 +740,14 @@ class Validation {
      * @param type $code エラーメッセージコード
      * @return boolean 正常： true / 異常： false
      */
-    public function zipcode($name, $value, $code = '') 
+    public function zipcode($name, $value, $code = '')
     {
         // 空白時は処理しない
         if (trim($value) == '') { return true; }
-        
+
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
-            
+
         // 検証
         $flag = false;
         if (preg_match('/^\d{3}[\-]*\d{4}$/', $value)) {
@@ -758,8 +757,8 @@ class Validation {
         }
 
         // エラーメッセージ設定
-        if (!$flag) { 
-            $this->_setError($name, $code); 
+        if (!$flag) {
+            $this->_setError($name, $code);
         }
 
         return $flag;
