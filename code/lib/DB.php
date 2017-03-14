@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.3
+ * @version 1.1.4
  */
 
 class DB
@@ -264,12 +264,18 @@ class DB
      * エラー処理
      * @param string $query 実行したクエリー
      */
-    private function _error($query)
+    private function _error($query, $parameter = array())
     {
         if (FEGG_DEVELOPER) {
-            $error = $this->_connect->errorInfo();
-            echo "[Error] " . $error[2] . '<br/>';
-            echo "[Query] " . $query . '<br/>';
+            if (!empty($this->_connect)) {
+                $error = $this->_connect->errorInfo();
+                echo "[Error] " . $error[2] . "<br/>\n";
+            }
+            echo "[Query] " . $query . "<br/>\n";
+            if (!empty($parameter)) {
+                echo "[Parameters] \n";
+                var_dump($parameter);
+            }
         }
         exit;
     }
@@ -298,12 +304,14 @@ class DB
                 }
                 $this->_lastInsertId = $this->_connect->lastInsertId();
             } else {
-                echo 'No PDOException. Checkpoint 2.';
-                $this->_error($query);
+                echo "No PDOStatemant. (_executeQuery: 1).<br />\n";
+                $this->_error($query, $parameter);
             }
 
         } catch(PDOException $e) {
-            $this->_error($query);
+            echo $e->getMessage( ) . "<br />\n";
+            echo "PDOException. (_executeQuery: 2).<br />\n";
+            $this->_error($query, $parameter);
         }
 
         if ($result) {
@@ -311,7 +319,10 @@ class DB
             // 結果行数の格納
             $this->_affectedRows = $pdoStatement->rowCount();
 
-        } else { $this->_error($query); }
+        } else {
+            echo "No Result. (_executeQuery: 3).<br />\n";
+            $this->_error($query);
+         }
 
         return $this->_affectedRows;
     }
@@ -987,6 +998,11 @@ class DB
 
         // クエリ取得
         $query = array_shift($parameters);
+
+        // ?とパラメーター数が不一致
+        if (mb_substr_count($query, '?', FEGG_DEFAULT_CHARACTER_CODE) <> count($parameters)) {
+            $this->_error($query . ' (? And parameters are unmatch)', $parameters);
+        }
 
         // パラメータ処理
         if ($numberOfArgs == 1) {
