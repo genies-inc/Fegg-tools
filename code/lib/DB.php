@@ -1001,7 +1001,8 @@ class DB
 
         // ?とパラメーター数が不一致
         if (mb_substr_count($query, '?', FEGG_DEFAULT_CHARACTER_CODE) <> count($parameters)) {
-            $this->_error($query . ' (? And parameters are unmatch)', $parameters);
+            echo "? And Parameters Are Unmatch.<br />\n";
+            $this->_error($query, $parameters);
         }
 
         // パラメータ処理
