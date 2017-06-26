@@ -1,7 +1,9 @@
 修正履歴
 ====
 /code/lib/DB.php
+- 1.1.5
 - 1.1.4
+  2017/06/26 escapeLikeKey()でエスケープ対象データが正しくされないバグを修正
   2017/03/14 エラー表示機能を強化
 
 /code/lib/validation.php

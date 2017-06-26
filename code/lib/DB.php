@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.4
+ * @version 1.1.5
  */
 
 class DB
@@ -552,14 +552,10 @@ class DB
      * @param  String $escapeLetter エスケープ文字
      * @return String 置換後検索文字列
      */
-    function escapeLikeKey($keyword, $front = '', $back = '', $escapeLetter = '!')
+    function escapeLikeKey($keyword, $front = '', $back = '')
     {
         $replacedKeyword = preg_replace('/(?=[!_%])/', '!', $keyword);
-        if ($keyword <> $replacedKeyword) {
-            $replacedKeyword = $front . $replacedKeyword . $back . ' Escape ' . $escapeLetter;
-        } else {
-            $replacedKeyword = $front . $replacedKeyword . $back;
-        }
+        $replacedKeyword = $front . $replacedKeyword . $back;
 
         return $replacedKeyword;
     }
@@ -1088,7 +1084,7 @@ class DB
                                 if ($tempQuery) {
                                     $tempQuery .= 'or ';
                                 }
-                                $tempQuery .= $itemName . ' Like ? ';
+                                $tempQuery .= $itemName . ' Like ? Escape \'!\'';
                                 $this->_whereValues[] = $value;
                             }
                             $convertedQuery = $convertedQueryFrontPart . '(' . $tempQuery . ') ' . $convertedQuery;
