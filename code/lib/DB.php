@@ -43,7 +43,7 @@ class DB
     function __construct()
     {
         // アプリケーションオブジェクト
-        $this->_app = &FEGG_getInstance();
+        $this->_app = FEGG_getInstance();
 
         // コンフィグ取得
         $this->_app->loadConfig('db_config');
@@ -238,7 +238,7 @@ class DB
     {
         // 接続
         try {
-            if (version_compare(PHP_VERSION, '5.3.6') >= 0) {
+            if (defined('PDO::MYSQL_ATTR_READ_DEFAULT_FILE')) {
                 $options = array(
                     PDO::MYSQL_ATTR_READ_DEFAULT_FILE  => '/etc/my.cnf',
                 );
