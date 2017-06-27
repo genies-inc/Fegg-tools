@@ -17,10 +17,10 @@ $db_regular_query = array(
             'order' => '',
         ),
         'insert' => array(
-            'item' => 'update_datetime = now(), create_datetime = now()',
+            'item' => 'updated_at = now(), created_at = now()',
         ),
         'update' => array(
-            'item' => 'update_datetime = now()',
+            'item' => 'updated_time = now()',
             'where' => '',
         ),
     ),
@@ -33,10 +33,10 @@ $db_regular_query = array(
                 'order' => '',
             ),
             'insert' => array(
-                'item' => 'update_time = now(), create_datetime = now()',
+                'item' => 'updated_at = now(), created_at = now()',
             ),
             'update' => array(
-                'item' => 'update_time = now()',
+                'item' => 'updated_at = now()',
                 'where' => '',
             ),
         ),
