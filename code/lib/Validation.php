@@ -7,7 +7,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.0
+ * @version 1.2.0
  */
 class Validation {
 
@@ -19,7 +19,7 @@ class Validation {
     /**
      * Constructor
      */
-    function __construct($languageCode)
+    function __construct($languageCode = '')
     {
         // 初期化
         $this->_errorFlag = false;
