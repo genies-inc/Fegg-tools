@@ -6,9 +6,9 @@
  * 
  * @access public
  * @author Genies, Inc.
- * @version 1.1.0
+ * @version 1.2.0
  */
-class Tool_File
+class File
 {
     function __construct()
     {

@@ -8,7 +8,15 @@
 - 1.1.4
   2017/03/14 エラー表示機能を強化
 
-/code/lib/validation.php
+/code/lib/Tool/Date.php
+- 1.1.0
+  2017/07/10 makeupDateFormat()の対応日付形式を拡張
+
+/code/lib/Tool/File.php
+- 1.2.0
+  2017/07/04 Application::getClass()の仕様変更に対応
+
+/code/lib/Validation.php
 - 1.2.0
   2017/06/30 コンストラクタの引数省略に対応
 - 1.1.0
