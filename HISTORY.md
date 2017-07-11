@@ -9,10 +9,14 @@
   2017/03/14 エラー表示機能を強化
 
 /code/lib/Tool/Date.php
+- 1.1.1
+  2017/07/10 makeupDateFormat()のバグ修正
 - 1.1.0
   2017/07/10 makeupDateFormat()の対応日付形式を拡張
 
 /code/lib/Tool/File.php
+- 1.2.1
+  2017/07/10 writeFile()でファイルの権限が変更できなかった場合のエラートラップを追加
 - 1.2.0
   2017/07/04 Application::getClass()の仕様変更に対応
 

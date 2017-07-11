@@ -6,7 +6,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.0
+ * @version 1.1.1
  */
 class Date
 {
@@ -285,7 +285,9 @@ class Date
 
         // 前ゼロ処理
         preg_match("/([0-9]+)\-([0-9]+)\-([0-9]+)\s([0-9]+):([0-9]+):([0-9]+)/",$fixedDate, $datetime);
-        $fixedDate = sprintf("%04d-%02d-%02d %02d:%02d:%02d", $datetime[1], $datetime[2], $datetime[3], $datetime[4], $datetime[5], $datetime[6]);
+        if ($datetime) {
+            $fixedDate = sprintf("%04d-%02d-%02d %02d:%02d:%02d", $datetime[1], $datetime[2], $datetime[3], $datetime[4], $datetime[5], $datetime[6]);
+        }
 
         return $fixedDate;
     }

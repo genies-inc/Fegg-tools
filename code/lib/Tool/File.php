@@ -6,7 +6,7 @@
  * 
  * @access public
  * @author Genies, Inc.
- * @version 1.2.0
+ * @version 1.2.1
  */
 class File
 {
@@ -272,7 +272,9 @@ class File
         fclose($filePointer);
         
         if (file_exists($file)) {
-            chmod($file, 0666);
+            try {
+                chmod($file, 0666);
+            } catch (Exception $e) {}
         }
     }
 }
