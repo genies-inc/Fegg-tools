@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.7
+ * @version 1.1.8
  */
 
 class DB
@@ -115,7 +115,7 @@ class DB
                         switch (true) {
                             case (preg_match('/^now/i', $match[2])):
                                 if ($tempQuery1) { $tempQuery1 .= ", "; }
-                                $tempQuery1 .= $match[1] . "`";
+                                $tempQuery1 .= "`" . trim($match[1]) . "`";
                                 if ($tempQuery2) { $tempQuery2 .= ", "; }
                                 $tempQuery2 .= '?';
                                 $this->_parameter[] = $this->_app->getDatetime();
@@ -123,7 +123,7 @@ class DB
 
                             default:
                                 if ($tempQuery1) { $tempQuery1 .= ", "; }
-                                $tempQuery1 .= $match[1];
+                                $tempQuery1 .= "`" . trim($match[1]) . "`";
                                 if ($tempQuery2) { $tempQuery2 .= ", "; }
                                 $tempQuery2 .= '?';
                                 $this->_parameter[] = $match[2];
@@ -134,7 +134,7 @@ class DB
 
                         // 項目名のみ
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
-                        $tempQuery1 .= $key;
+                        $tempQuery1 .= "`" . trim($key) . "`";
 
                         if ($tempQuery2) { $tempQuery2 .= ", "; }
                         $tempQuery2 .= '?';
@@ -424,7 +424,10 @@ class DB
         if ($this->_regularUseQueryFlagForTable) {
             // 項目
             if (isset($this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']) && $this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']) {
-                $this->item($this->_app->config['db_regular_query']['table'][$this->_table][$queryType]['item']);
+                $item = explode(",", $this->_app->config['db_regular_query']['regular_use'][$queryType]['item']);
+                foreach ($item as $value) {
+                    $this->item(trim($value));
+                }
             }
 
             // 条件
@@ -715,11 +718,11 @@ class DB
                 // パラメーターが連想配列の場合は要素名で一致させる
                 $items = explode(',', $query);
                 foreach ($items as $value) {
-                    $value = preg_replace('/^\s*(\w+)\s*/', '$1', $value);
+                    $value = trim($value);
                     if (isset($parameter[$value])) {
-                        $this->_items['`' . $value . '`'] = $parameter[$value];
+                        $this->_items[$value] = $parameter[$value];
                     } else {
-                        $this->_items['`' . $value . '`'] = '';
+                        $this->_items[$value] = '';
                     }
                 }
 
@@ -728,11 +731,11 @@ class DB
                 // パラメーターが配列の場合は順番に一致させる
                 $items = explode(',', $query);
                 foreach ($items as $key => $value) {
+                    $value = trim($value);
                     if (isset($parameter[$key])) {
-                        $value = preg_replace('/^\s*(\w+)\s*/', '$1', $value);
-                        $this->_items['`' . $value . '`'] = $parameter[$key];
+                        $this->_items[$value] = $parameter[$key];
                     } else {
-                        $this->_items['`' . $value . '`'] = '';
+                        $this->_items[$value] = '';
                     }
                 }
 
@@ -742,6 +745,7 @@ class DB
             // パラメーター省略時は項目名のみ処理
             $items = explode(',', $query);
             foreach ($items as $value) {
+                $value = trim($value);
                 $this->_items[$value] = '';
             }
         }
