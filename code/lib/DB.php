@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.5
+ * @version 1.1.7
  */
 
 class DB
@@ -115,7 +115,7 @@ class DB
                         switch (true) {
                             case (preg_match('/^now/i', $match[2])):
                                 if ($tempQuery1) { $tempQuery1 .= ", "; }
-                                $tempQuery1 .= $match[1];
+                                $tempQuery1 .= $match[1] . "`";
                                 if ($tempQuery2) { $tempQuery2 .= ", "; }
                                 $tempQuery2 .= '?';
                                 $this->_parameter[] = $this->_app->getDatetime();
