@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.8
+ * @version 1.2.0
  */
 
 class DB
@@ -486,11 +486,7 @@ class DB
     function all($index = '')
     {
         if ($index) {
-            $tempRecord = $this->_record;
-            $record = array();
-            foreach ($tempRecord as $key => $value) {
-                $record[$value[$index]] = $value;
-            }
+            $record = array_column($this->_record, null, $index);
         } else {
             $record = $this->_record;
         }
@@ -1105,4 +1101,3 @@ class DB
         return $this;
     }
 }
-/* End of file: DB.php */
