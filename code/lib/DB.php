@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.0
+ * @version 1.2.1
  */
 
 class DB
@@ -656,11 +656,7 @@ class DB
      */
     function id($index)
     {
-        $tempRecord = $this->_record;
-        $ids = array();
-        foreach ($tempRecord as $key => $value) {
-            $ids[] = $value[$index];
-        }
+        $ids = array_column($this->_record, $index, $index);
 
         return $ids;
     }
