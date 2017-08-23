@@ -1,18 +1,18 @@
 <?php
 /**
  * Tool_Fileクラス
- * 
+ *
  * Fileの操作に必要な処理を提供するクラス。
- * 
+ *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.1
+ * @version 1.3.0
  */
 class File
 {
     function __construct()
     {
-        
+
     }
 
 
@@ -26,7 +26,7 @@ class File
         if (is_dir($fromDirectory) && is_dir($toDirectory)) {
             if ($handle = opendir($fromDirectory)) {
                 while (($file = readdir($handle)) !== false) {
-                    
+
                     if ($file == "." || $file == "..") {
                         continue;
                     }
@@ -37,21 +37,21 @@ class File
             }
         }
     }
-    
+
 
     /**
      * ディレクトリコピー
      * @param string $fromDirectory コピー元ディレクトリ
-     * @param string $toDirectory コピー先のディレクトリ（要作成） 
+     * @param string $toDirectory コピー先のディレクトリ（要作成）
      * @param boolean $recursiveCallFlag True: サブディレクトりも処理
      */
     function copyDirectory($fromDirectory, $toDirectory, $recursiveCallFlag = false)
     {
         if (is_dir($fromDirectory)) {
-            
+
             if ($handle = opendir($fromDirectory)) {
                 while (($item = readdir($handle)) !== false) {
-                    
+
                     if ($item == "." || $item == "..") {
                         continue;
                     }
@@ -70,8 +70,8 @@ class File
             }
         }
     }
-    
-    
+
+
     /**
      * ファイルコピー
      * @param string $source
@@ -83,13 +83,13 @@ class File
             if (copy($source, $dest)) {
                 chmod($dest, 0666);
             }
-        }        
+        }
     }
 
 
     /**
      * ディレクトリ作成
-     * @param string $directory 
+     * @param string $directory
      * @param string $permission パーミッション（chmodのパラメーター）
      */
     function createDirectory($directory, $permission = '0777')
@@ -101,8 +101,8 @@ class File
             }
         }
     }
-    
-    
+
+
     /**
      * ファイルの移動
      * @param string $from 移動元ファイル
@@ -114,11 +114,11 @@ class File
             rename($from, $to);
         }
     }
-    
-    
+
+
     /**
      * ファイル読込み
-     * @param string $fileName 
+     * @param string $fileName
      */
     function readFile($fileName)
     {
@@ -130,14 +130,14 @@ class File
             }
             fclose($filePointer);
         }
-        
+
         return $buffer;
     }
-    
-    
+
+
     /**
      * ディレクトリ削除
-     * @param string $directory
+     * @param string $file ファイル名（*による複数指定可）
      */
     function removeDirectory($directory)
     {
@@ -161,8 +161,8 @@ class File
             rmdir($directory);
         }
     }
-    
-    
+
+
     /**
      * 指定時間以上経過したファイルの削除
      *
@@ -185,7 +185,7 @@ class File
             if ($item == "." || $item == "..") {
                 continue;
             }
-            
+
             if (!is_dir($path . $item)) {
 
                 $name = $path . $item;
@@ -205,8 +205,8 @@ class File
         closedir($dir);
 
         return false;
-    }    
-    
+    }
+
 
     /**
      * ファイル削除
@@ -214,12 +214,14 @@ class File
      */
     function removeFile($file)
     {
-        if (file_exists($file)) {
-            unlink($file);
+        foreach (glob($file) as $key => $value) {
+            if (is_file($value)) {
+                unlink($value);
+            }
         }
     }
-    
-    
+
+
     /**
      * ディレクトリ中のファイル更新日時変更
      * @param string $directory
@@ -228,7 +230,7 @@ class File
     function touchDirectory($directory, $datetime)
     {
         if (is_dir($directory)) {
-            
+
             $date = strptime(date($datetime), "%Y-%m-%d %H:%M:%S");
             $year = $date['tm_year'] + 1900;
             $month = $date['tm_mon'] + 1;
@@ -240,7 +242,7 @@ class File
 
             if ($handle = opendir($directory)) {
                 while (($item = readdir($handle)) !== false) {
-                    
+
                     if ($item == "." || $item == "..") {
                         continue;
                     }
@@ -257,20 +259,20 @@ class File
             }
         }
     }
-    
-    
+
+
     /**
      * ファイル出力
      * @param string $file
      * @param string $data
-     * @param string $writeOption 
+     * @param string $writeOption
      */
     function writeFile($file, $data, $writeOption = 'a')
     {
         $filePointer = fopen($file, $writeOption);
         fwrite($filePointer, $data);
         fclose($filePointer);
-        
+
         if (file_exists($file)) {
             try {
                 chmod($file, 0666);
