@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.1
+ * @version 1.2.2
  */
 
 class DB
@@ -485,8 +485,11 @@ class DB
      */
     function all($index = '')
     {
+        $record = '';
         if ($index) {
-            $record = array_column($this->_record, null, $index);
+            if ($this->_record) {
+                $record = array_column($this->_record, null, $index);
+            }
         } else {
             $record = $this->_record;
         }
@@ -656,7 +659,10 @@ class DB
      */
     function id($index)
     {
-        $ids = array_column($this->_record, $index, $index);
+        $ids = '';
+        if ($this->_record) {
+            $ids = array_column($this->_record, $index, $index);
+        }
 
         return $ids;
     }
