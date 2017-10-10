@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.2
+ * @version 1.3.0
  */
 
 class DB
@@ -785,16 +785,21 @@ class DB
 
     /**
      * 取得したレコードの１件目を返す
-     * @return array
+     * @param string $item 指定されている場合はその値のみ返す
+     * @return mixed $item省略時：レコードの配列 $item指定時：値
      */
-    function one()
+    function one($item = '')
     {
+        $record = array();
         if (is_array($this->_record)) {
             $record = $this->_record;
-        } else {
-            $record = array();
+            $record = array_shift($record);
         }
-        return array_shift($record);
+        if ($item) {
+            $record = isset($record[$item]) ? $record[$item] : '';
+        }
+
+        return $record;
     }
 
 
