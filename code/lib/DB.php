@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.3.0
+ * @version 1.3.1
  */
 
 class DB
@@ -152,7 +152,7 @@ class DB
                 $query .= 'Update `' . $this->_table . '` Set ';
                 $tempQuery1 = '';
                 foreach($this->_items as $key => $value) {
-                    if (preg_match('/([^=]+)\s*=\s*([\w\(\)\+0-9\s]+)/i', $key, $match)) {
+                    if (preg_match('/([^=]+)\s*=\s*([\w\(\)\+0-9\s\']+)/i', $key, $match)) {
 
                         // 代入形式
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
