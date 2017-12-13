@@ -1,6 +1,8 @@
 修正履歴
 ====
 /code/lib/DB.php
+- 1.4.0
+  2017/12/13 トランザクション処理に対応（startTransaction, commit, rollback）、エラー時にExceptionをthrowするように変更
 - 1.3.1
   2017/10/10 item()でUpdate時に空白の代入がうまく処理されない問題を修正
 - 1.3.0

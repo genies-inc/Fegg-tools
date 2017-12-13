@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.3.1
+ * @version 1.4.0
  */
 
 class DB
@@ -19,6 +19,7 @@ class DB
 
     private $_connect;
     private $_connectFlag;
+    private $_transactionFlag;
     private $_query;
     private $_parameter;
     private $_record;
@@ -277,7 +278,9 @@ class DB
                 var_dump($parameter);
             }
         }
-        exit;
+        $this->_close();
+
+        throw new Exception($this->_connect->errorInfo());
     }
 
 
@@ -499,6 +502,16 @@ class DB
 
 
     /**
+     * トランザクションコミット
+     */
+    function commit()
+    {
+        $this->_connect->commit();
+        $this->_transactionFlag = false;
+    }
+
+
+    /**
      * データ件数カウント
      * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：queryメソッドによるquery設定
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
@@ -565,6 +578,7 @@ class DB
 
     /**
      * クエリー実行
+     * @param chainFlag True:メソッドチェーンに対応するための変換をする false:そのままQueryを実行
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function execute()
@@ -772,12 +786,16 @@ class DB
      */
     function masterServer()
     {
-        // 接続
-        $this->_connect($this->_app->config['db_config']['master']['dsn'],
-                        $this->_app->config['db_config']['master']['username'],
-                        $this->_app->config['db_config']['master']['password']
-               );
-        $this->_connectFlag = true;
+        // トランザクションが開始されている場合は処理しない
+        if (!$this->_transactionFlag) {
+
+            // 接続
+            $this->_connect($this->_app->config['db_config']['master']['dsn'],
+                            $this->_app->config['db_config']['master']['username'],
+                            $this->_app->config['db_config']['master']['password']
+                );
+            $this->_connectFlag = true;
+        }
 
         return $this;
     }
@@ -856,10 +874,19 @@ class DB
 
 
     /**
+     * トランザクションロールバック
+     */
+    function rollback()
+    {
+        $this->_connect->rollback();
+        $this->_transactionFlag = false;
+    }
+
+
+    /**
      * データ取得
      * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：queryメソッドによるquery設定
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
-
      */
     function select($table)
     {
@@ -902,23 +929,47 @@ class DB
      */
     function slaveServer()
     {
-        // 接続先のサーバーを決定（ランダム）
-        $maxServer = count($this->_app->config['db_config']['slave']) - 1;
+        // トランザクションが開始されている場合は処理しない
+        if (!$this->_transactionFlag) {
 
-        $serverNo = 0;
-        if ($maxServer > 0) {
-            mt_srand();
-            $serverNo = mt_rand(0, $maxServer);
+            // 接続先のサーバーを決定（ランダム）
+            $maxServer = count($this->_app->config['db_config']['slave']) - 1;
+
+            $serverNo = 0;
+            if ($maxServer > 0) {
+                mt_srand();
+                $serverNo = mt_rand(0, $maxServer);
+            }
+
+            // 接続
+            $this->_connect($this->_app->config['db_config']['slave'][$serverNo]['dsn'],
+                            $this->_app->config['db_config']['slave'][$serverNo]['username'],
+                            $this->_app->config['db_config']['slave'][$serverNo]['password']
+                    );
+            $this->_connectFlag = true;
         }
 
-        // 接続
-        $this->_connect($this->_app->config['db_config']['slave'][$serverNo]['dsn'],
-                        $this->_app->config['db_config']['slave'][$serverNo]['username'],
-                        $this->_app->config['db_config']['slave'][$serverNo]['password']
-               );
-        $this->_connectFlag = true;
-
         return $this;
+    }
+
+
+    /**
+     * トランザクション開始
+     */
+    function startTransaction()
+    {
+        // マスターサーバーを対象
+        $this->masterServer();
+
+        // トランザクション分離レベル指定
+        $pdoStatement = $this->_connect->prepare('SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;');
+        $pdoStatement->execute();
+
+        // トランザクション開始
+        $this->_connect->beginTransaction();
+
+        // トランザクション処理中はDB再接続するとロールバックされるためそれを防ぐためにフラグ制御する
+        $this->_transactionFlag = true;
     }
 
 
