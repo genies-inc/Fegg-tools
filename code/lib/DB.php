@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.4.0
+ * @version 1.4.1
  */
 
 class DB
@@ -19,7 +19,6 @@ class DB
 
     private $_connect;
     private $_connectFlag;
-    private $_transactionFlag;
     private $_query;
     private $_parameter;
     private $_record;
@@ -506,8 +505,10 @@ class DB
      */
     function commit()
     {
+        if ($this->_connect->inTransaction()) {
+            throw new Exception('called rollback but not in-transaction');
+        }
         $this->_connect->commit();
-        $this->_transactionFlag = false;
     }
 
 
@@ -787,13 +788,13 @@ class DB
     function masterServer()
     {
         // トランザクションが開始されている場合は処理しない
-        if (!$this->_transactionFlag) {
+        if (!$this->_connect || !$this->_connect->inTransaction()) {
 
             // 接続
             $this->_connect($this->_app->config['db_config']['master']['dsn'],
                             $this->_app->config['db_config']['master']['username'],
                             $this->_app->config['db_config']['master']['password']
-                );
+            );
             $this->_connectFlag = true;
         }
 
@@ -878,8 +879,10 @@ class DB
      */
     function rollback()
     {
+        if (!$this->_connect->inTransaction()) {
+            throw new Exception('called rollback but not in-transaction');
+        }
         $this->_connect->rollback();
-        $this->_transactionFlag = false;
     }
 
 
@@ -930,7 +933,7 @@ class DB
     function slaveServer()
     {
         // トランザクションが開始されている場合は処理しない
-        if (!$this->_transactionFlag) {
+        if (!$this->_connect || !$this->_connect->inTransaction()) {
 
             // 接続先のサーバーを決定（ランダム）
             $maxServer = count($this->_app->config['db_config']['slave']) - 1;
@@ -967,9 +970,9 @@ class DB
 
         // トランザクション開始
         $this->_connect->beginTransaction();
-
-        // トランザクション処理中はDB再接続するとロールバックされるためそれを防ぐためにフラグ制御する
-        $this->_transactionFlag = true;
+        if (!$this->_connect->inTransaction()) {
+            throw new Exception('Fail to call begin-transaction');
+        }
     }
 
 
