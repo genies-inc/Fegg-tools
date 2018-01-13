@@ -20,7 +20,7 @@ $db_regular_query = array(
             'item' => 'updated_at = now(), created_at = now()',
         ),
         'update' => array(
-            'item' => 'updated_time = now()',
+            'item' => 'updated_at = now()',
             'where' => '',
         ),
     ),
