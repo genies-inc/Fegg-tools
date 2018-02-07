@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.4.1
+ * @version 1.4.2
  */
 
 class DB
@@ -505,7 +505,7 @@ class DB
      */
     function commit()
     {
-        if ($this->_connect->inTransaction()) {
+        if (!$this->_connect->inTransaction()) {
             throw new Exception('called rollback but not in-transaction');
         }
         $this->_connect->commit();
