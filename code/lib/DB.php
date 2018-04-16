@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.4.3
+ * @version 1.4.4
  */
 
 class DB
@@ -745,7 +745,7 @@ class DB
                 $items = explode(',', $query);
                 foreach ($items as $key => $value) {
                     $value = trim($value);
-                    if (array_key_exists($value, $parameter)) {
+                    if (array_key_exists($key, $parameter)) {
                         $this->_items[$value] = $parameter[$key];
                     } else {
                         $this->_items[$value] = '';
