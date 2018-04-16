@@ -1,19 +1,19 @@
 <?php
 /**
  * CSVクラス
- * 
+ *
  * 一般的な操作に関するクラス。
- * 
+ *
  * @access public
  * @author Genies, Inc.
- * @version 1.0.2
+ * @version 1.1.0
  */
-class Tool_CSV
+class CSV
 {
-    function __construct() 
+    function __construct()
     {
     }
-    
+
 
     /**
      * CSVファイルを１行読み込む
@@ -76,6 +76,27 @@ class Tool_CSV
 
 
     /**
+     * 連想配列からCSVデータを作成
+     * @param array 元となる連想配列
+     * @return string CSVデータ
+     */
+    public function arrayToCSV($data)
+    {
+        $csv = '';
+        foreach ($data as $key => $value) {
+            $tempCSV = '';
+            foreach ($value as $key2 => $value2) {
+                $tempCSV .= $tempCSV ? ',' : '';
+                $tempCSV .= '"' . $value2 . '"';
+            }
+            $csv .= $tempCSV . "\r\n";
+        }
+
+        return $csv;
+    }
+
+
+    /**
      * CSVファイルを読み込みタイトル行（１行目）連想配列として返す
      *
      * @param string $csvPath CSVファイルのパス及びファイル名
@@ -117,7 +138,7 @@ class Tool_CSV
 
         // Unable to detect character encodingの警告を防ぐ
         mb_language("Japanese");
-        
+
         // CSVファイルの存在確認
         if (file_exists($csvPath)) {
 
@@ -194,4 +215,3 @@ class Tool_CSV
 
     }
 }
-/* End of file Tool_CSV.php */
