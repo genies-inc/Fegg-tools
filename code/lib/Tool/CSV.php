@@ -1,19 +1,19 @@
 <?php
 /**
  * CSVクラス
- * 
+ *
  * 一般的な操作に関するクラス。
- * 
+ *
  * @access public
  * @author Genies, Inc.
- * @version 1.0.2
+ * @version 1.1.1
  */
-class Tool_CSV
+class CSV
 {
-    function __construct() 
+    function __construct()
     {
     }
-    
+
 
     /**
      * CSVファイルを１行読み込む
@@ -59,7 +59,7 @@ class Tool_CSV
 
             $items = $matches[1];
             $itemSize = count($items);
-            for($i = 0; $i < count($itemSize); $i++){
+            for($i = 0; $i < $itemSize; $i++){
 
                 // 囲み文字を削除、囲み文字内の同一文字の置換
                 $items[$i] = preg_replace('/^'.$enclosure.'(.*)'.$enclosure.'$/s', '$1', $items[$i]);
@@ -72,6 +72,27 @@ class Tool_CSV
         } else {
             return false;
         }
+    }
+
+
+    /**
+     * 連想配列からCSVデータを作成
+     * @param array 元となる連想配列
+     * @return string CSVデータ
+     */
+    public function arrayToCSV($data)
+    {
+        $csv = '';
+        foreach ($data as $key => $value) {
+            $tempCSV = '';
+            foreach ($value as $key2 => $value2) {
+                $tempCSV .= $tempCSV ? ',' : '';
+                $tempCSV .= '"' . $value2 . '"';
+            }
+            $csv .= $tempCSV . "\r\n";
+        }
+
+        return $csv;
     }
 
 
@@ -117,7 +138,7 @@ class Tool_CSV
 
         // Unable to detect character encodingの警告を防ぐ
         mb_language("Japanese");
-        
+
         // CSVファイルの存在確認
         if (file_exists($csvPath)) {
 
@@ -194,4 +215,3 @@ class Tool_CSV
 
     }
 }
-/* End of file Tool_CSV.php */

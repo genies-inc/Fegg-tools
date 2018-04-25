@@ -32,6 +32,10 @@
 - 1.1.4
   2017/03/14 エラー表示機能を強化
 
+/code/lib/Tool/CSV.php
+- 1.1.1
+  2018/04/25 arrayToCSV()の追加、囲み文字取り除きのバグ修正
+ 
 /code/lib/Tool/Date.php
 - 1.1.1
   2017/07/10 makeupDateFormat()のバグ修正
