@@ -34,8 +34,10 @@
 
 /code/lib/Tool/CSV.php
 - 1.1.1
-  2018/04/25 arrayToCSV()の追加、囲み文字取り除きのバグ修正
- 
+  2018/04/25 囲み文字取り除きのバグ修正
+- 1.1.0
+  2018/04/16 arrayToCSVメソッド追加
+
 /code/lib/Tool/Date.php
 - 1.1.1
   2017/07/10 makeupDateFormat()のバグ修正
