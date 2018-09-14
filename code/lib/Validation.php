@@ -7,7 +7,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.0
+ * @version 1.2.1
  */
 class Validation {
 
@@ -69,7 +69,7 @@ class Validation {
     public function alphameric($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -101,7 +101,7 @@ class Validation {
     public function date($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -154,7 +154,7 @@ class Validation {
     public function email($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -196,7 +196,7 @@ class Validation {
     public function hankaku($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -239,7 +239,7 @@ class Validation {
     public function katakana($name, $value, $code = '', $zenkakuFlag = false)
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -282,7 +282,7 @@ class Validation {
     public function length($name, $value, $length, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -321,7 +321,7 @@ class Validation {
     public function maxbyte($name, $value, $byte, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -356,7 +356,7 @@ class Validation {
     {
 
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -396,7 +396,7 @@ class Validation {
     {
 
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -436,7 +436,7 @@ class Validation {
     public function numeric($name, $value, $code = '', $decimalPointFlag = false, $minusFlag = false)
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -475,7 +475,7 @@ class Validation {
     public function password($name, $value, $code = '', $mixedLettersFlag = false)
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -574,7 +574,7 @@ class Validation {
     public function tel($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -606,7 +606,7 @@ class Validation {
     public function time($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -645,7 +645,7 @@ class Validation {
     public function url($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -712,7 +712,7 @@ class Validation {
     public function userid($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -744,7 +744,7 @@ class Validation {
     public function zipcode($name, $value, $code = '')
     {
         // 空白時は処理しない
-        if (trim($value) == '') { return true; }
+        if (empty($value) || trim($value) == '') { return true; }
 
         // 既に同じ名称のエラーが設定されている場合処理しない
         if (isset($this->_errorMessage[$name])) { return false; }
@@ -765,4 +765,3 @@ class Validation {
         return $flag;
     }
 }
-/* End of file Validation.php */
