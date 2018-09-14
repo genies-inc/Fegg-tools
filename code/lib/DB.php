@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.4.5
+ * @version 1.4.6
  */
 
 class DB
@@ -409,8 +409,10 @@ class DB
     function _isHash($array)
     {
         // 連想配列の先頭キーに0は使えず、配列の先頭は0という前提
-        reset($array);
-        list($key) = each($array);
+        foreach ($array as $key => $value) {
+            // 先頭のキーを取得
+            break;
+        }
 
         return $key !== 0;
     }
