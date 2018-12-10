@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.4.6
+ * @version 1.4.7
  */
 
 class DB
@@ -172,7 +172,7 @@ class DB
 
                         // 項目名のみ
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
-                        $tempQuery1 .= $key . '= ?';
+                        $tempQuery1 .= "`" . trim($key) . "`" . '= ?';
 
                         $this->_parameter[] = $value;
                     }
