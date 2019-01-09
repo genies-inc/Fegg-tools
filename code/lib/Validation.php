@@ -7,7 +7,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.1
+ * @version 1.2.2
  */
 class Validation {
 
@@ -523,8 +523,8 @@ class Validation {
                 $flag = true;
             }
         } else {
-            $result = array_filter($value);
-            if (!empty($result)) {
+            $result = current($value);
+            if ($result !== '' && $result !== null) {
                 $flag = true;
             }
         }

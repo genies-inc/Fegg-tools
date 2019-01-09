@@ -57,6 +57,8 @@
   2017/07/04 Application::getClass()の仕様変更に対応
 
 /code/lib/Validation.php
+- 1.2.2
+  2019/01/09 require()の判定条件を変更（[0 => 0]をtrue判定に）
 - 1.2.1
   2018/09/14 PHP7への対応のためロジックを修正
 - 1.2.0
