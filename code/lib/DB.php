@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.4.7
+ * @version 1.5.0
  */
 
 class DB
@@ -502,6 +502,26 @@ class DB
     }
 
 
+
+
+    /**
+     * 1次元配列での取得
+     * @param string $keyname 配列のキーにする項目名
+     * @param string $valueName 配列の値にする項目名
+     * @return array
+     */
+    function arr($keyName, $valueName)
+    {
+        $tempRecord = $this->_record;
+        $record = array();
+        foreach ($tempRecord as $key => $value) {
+            $record[$value[$keyName]] = $value[$valueName];
+        }
+
+        return $record;
+    }
+
+
     /**
      * トランザクションコミット
      */
@@ -909,22 +929,6 @@ class DB
         $this->_initQuery();
 
         return $this;
-    }
-
-
-    /**
-     * 1次元配列での取得
-     * @return array
-     */
-    function simpleArray($keyName, $valueName)
-    {
-        $tempRecord = $this->_record;
-        $record = array();
-        foreach ($tempRecord as $key => $value) {
-            $record[$value[$keyName]] = $value[$valueName];
-        }
-
-        return $record;
     }
 
 
