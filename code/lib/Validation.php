@@ -7,7 +7,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.2
+ * @version 1.2.3
  */
 class Validation {
 
@@ -202,8 +202,9 @@ class Validation {
         if (isset($this->_errorMessage[$name])) { return false; }
 
         // 検証
+        // 半角に変換した文字の長さと幅を変数化
         $flag = false;
-        if (strlen($value) == mb_strlen($value)) {
+        if (mb_strlen($value) == mb_strwidth($value)) {
 
             $flag = true;
 
