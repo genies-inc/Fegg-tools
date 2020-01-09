@@ -10,13 +10,14 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.5.0
+ * @version 1.5.1
  */
 
 class DB
 {
     private $_app;
 
+    private $_dbConfig;
     private $_connect;
     private $_connectFlag;
     private $_query;
@@ -40,13 +41,14 @@ class DB
     /**
      *  constructor
      */
-    function __construct()
+    function __construct($dbConfig = 'db_config')
     {
         // アプリケーションオブジェクト
         $this->_app = FEGG_getInstance();
 
         // コンフィグ取得
-        $this->_app->loadConfig('db_config');
+        $this->_dbConfig = $dbConfig;
+        $this->_app->loadConfig($this->_dbConfig);
         $this->_app->loadConfig('db_regular_query');
 
         // 初期化
@@ -813,9 +815,9 @@ class DB
         if (!$this->_connect || !$this->_connect->inTransaction()) {
 
             // 接続
-            $this->_connect($this->_app->config['db_config']['master']['dsn'],
-                            $this->_app->config['db_config']['master']['username'],
-                            $this->_app->config['db_config']['master']['password']
+            $this->_connect($this->_app->config[$this->_dbConfig]['master']['dsn'],
+                            $this->_app->config[$this->_dbConfig]['master']['username'],
+                            $this->_app->config[$this->_dbConfig]['master']['password']
             );
             $this->_connectFlag = true;
         }
@@ -942,7 +944,7 @@ class DB
         if (!$this->_connect || !$this->_connect->inTransaction()) {
 
             // 接続先のサーバーを決定（ランダム）
-            $maxServer = count($this->_app->config['db_config']['slave']) - 1;
+            $maxServer = count($this->_app->config[$this->_dbConfig]['slave']) - 1;
 
             $serverNo = 0;
             if ($maxServer > 0) {
@@ -951,9 +953,9 @@ class DB
             }
 
             // 接続
-            $this->_connect($this->_app->config['db_config']['slave'][$serverNo]['dsn'],
-                            $this->_app->config['db_config']['slave'][$serverNo]['username'],
-                            $this->_app->config['db_config']['slave'][$serverNo]['password']
+            $this->_connect($this->_app->config[$this->_dbConfig]['slave'][$serverNo]['dsn'],
+                            $this->_app->config[$this->_dbConfig]['slave'][$serverNo]['username'],
+                            $this->_app->config[$this->_dbConfig]['slave'][$serverNo]['password']
                     );
             $this->_connectFlag = true;
         }
