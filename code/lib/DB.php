@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.5.1
+ * @version 1.5.2
  */
 
 class DB
@@ -642,7 +642,7 @@ class DB
      */
     function getAffectedRow()
     {
-        $this->_affectedRows;
+        return $this->_affectedRows;
     }
 
 
