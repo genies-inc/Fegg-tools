@@ -61,8 +61,12 @@
   2017/07/10 makeupDateFormat()の対応日付形式を拡張
 
 /code/lib/Tool/File.php
+- 1.3.1
+  2020/05/11 writeFile()のエラートラップを追加
+- 1.3.0
+  2017/08/23 removeFileの*による複数削除対応、存在チェックをis_fileに変更
 - 1.2.1
-  2017/07/10 writeFile()でファイルの権限が変更できなかった場合のエラートラップを追加
+  2017/07/10 makeupDateFormat()のバグ修正、writeFile()でファイルの権限が変更できなかった場合のエラートラップを追加
 - 1.2.0
   2017/07/04 Application::getClass()の仕様変更に対応
 

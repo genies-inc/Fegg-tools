@@ -6,7 +6,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.3.0
+ * @version 1.3.1
  */
 class File
 {
@@ -269,16 +269,21 @@ class File
      */
     function writeFile($file, $data, $writeOption = 'a')
     {
-        $filePointer = fopen($file, $writeOption);
-        fwrite($filePointer, $data);
-        fclose($filePointer);
+        try {
 
-        if (file_exists($file)) {
-            try {
-                chmod($file, 0666);
-            } catch (Exception $e) {}
+            $filePointer = fopen($file, $writeOption);
+            fwrite($filePointer, $data);
+            fclose($filePointer);
+
+            if (file_exists($file)) {
+                try {
+                    // 可能な場合に限り権限を666に変更
+                    chmod($file, 0666);
+                } catch (Exception $e) {}
+            }
+
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
     }
 }
-
-/* End of file File.php */
