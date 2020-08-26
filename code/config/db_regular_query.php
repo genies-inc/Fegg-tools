@@ -9,18 +9,18 @@ $db_regular_query = array(
     // テーブルに関わらず付加されるクエリー
     'regular_use' => array(
         'count' => array(
-            'where' => 'delete_flag = 0',
+            'where' => 'deleted = 0',
             'order' => '',
         ),
         'select' => array(
-            'where' => 'delete_flag = 0',
+            'where' => 'deleted = 0',
             'order' => '',
         ),
         'insert' => array(
-            'item' => 'updated_at = now(), created_at = now()',
+            'item' => '',
         ),
         'update' => array(
-            'item' => 'updated_at = now()',
+            'item' => '',
             'where' => '',
         ),
     ),
@@ -29,17 +29,16 @@ $db_regular_query = array(
     'table' => array(
         'table_name' => array(
             'select' => array(
-                'where' => 'show_flag = 0',
+                'where' => '',
                 'order' => '',
             ),
             'insert' => array(
-                'item' => 'updated_at = now(), created_at = now()',
+                'item' => '',
             ),
             'update' => array(
-                'item' => 'updated_at = now()',
+                'item' => '',
                 'where' => '',
             ),
         ),
     ),
 );
-/* End of file db_regular_query.php */

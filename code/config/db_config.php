@@ -41,4 +41,3 @@ if (false) {
         'password' => 'db_password'
     );
 }
-/* End of file db_config.php */
