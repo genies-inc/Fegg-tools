@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.5.2
+ * @version 1.5.3
  */
 
 class DB
@@ -1081,6 +1081,7 @@ class DB
             // パラメーターあり
             $index = 0;
             foreach ($parameters as $parameter) {
+
                 if (!is_array($parameter)) {
 
                     $this->_whereValues[] = $parameter;
@@ -1095,12 +1096,12 @@ class DB
                     // like --> or 区切り
 
                     // 変換位置の確定
-                    preg_match_all('/(\w+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
+                    preg_match_all('/([\w`]+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*[\?,]+\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
                     $position = $matches[0][$index][1];
 
                     // 演算子の確定
-                    preg_match_all('/(\w+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
-                    $operator = $matches[2][$index];
+                    // preg_match_all('/(\w+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
+                    $operator = $matches[2][$index][0];
 
                     // 対象箇所までのクエリー取得
                     $convertedQueryFrontPart = substr($query, 0, $position);
@@ -1111,13 +1112,13 @@ class DB
                     }
 
                     // 項目名取得
-                    $pattern = '/^\s*\w+/i';
+                    $pattern = '/^\s*`?(\w+)`?/i';
                     preg_match($pattern, $convertedQuery, $matches);
-                    $itemName = $matches[0];
+                    $itemName = $matches[1];
                     $itemName = '`' . $itemName . '`';
 
                     // 対象箇所からのクエリー取得
-                    $convertedQuery = preg_replace('/^\s*\w+\s*' . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
+                    $convertedQuery = preg_replace('/^\s*[\w`]+\s*' . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
 
                     $tempQuery = '';
                     $operator = strtolower($operator);
