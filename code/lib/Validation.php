@@ -7,7 +7,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.2.3
+ * @version 1.3.0
  */
 class Validation {
 
@@ -107,8 +107,13 @@ class Validation {
         if (isset($this->_errorMessage[$name])) { return false; }
 
         // 日付に含まれる/,-を除去
-        $value = preg_replace('/[\/\-]/', '', $value);
-
+        $value = preg_replace('/[\/]/', '-', $value);
+        $date = explode('-', $value);
+        $y = isset($date[0]) ? sprintf('%04s', $date[0]) : '';
+        $m = $y && isset($date[1]) ? sprintf('%02s', $date[1]) : '';
+        $d = $m && isset($date[2]) ? sprintf('%02s', $date[2]) : '';
+        $value = $y . $m . $d;
+        
         // 検証
         $flag = false;
         if (preg_match('/^[0-9]+$/', $value)) {
