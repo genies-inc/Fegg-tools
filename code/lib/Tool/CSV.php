@@ -6,7 +6,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.1
+ * @version 1.1.2
  */
 class CSV
 {
@@ -83,13 +83,14 @@ class CSV
     public function arrayToCSV($data)
     {
         $csv = '';
-        foreach ($data as $key => $value) {
-            $tempCSV = '';
-            foreach ($value as $key2 => $value2) {
-                $tempCSV .= $tempCSV ? ',' : '';
-                $tempCSV .= '"' . $value2 . '"';
-            }
-            $csv .= $tempCSV . "\r\n";
+        foreach ($data as $key => $row) {
+            $row = array_map(
+                function($value){
+                    $value = str_replace('"', '""', $value);
+                    return "\"{$value}\"";
+                }, $row);
+            $row = implode(',', $row);
+            $csv .= $row . "\r\n";
         }
 
         return $csv;
