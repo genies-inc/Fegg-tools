@@ -61,6 +61,8 @@
   2018/04/16 arrayToCSVメソッド追加
 
 /code/lib/Tool/Date.php
+- 1.1.2
+  2021/02/19 Windows環境での動作に対応
 - 1.1.1
   2017/07/10 makeupDateFormat()のバグ修正
 - 1.1.0

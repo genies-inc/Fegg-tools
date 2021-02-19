@@ -6,7 +6,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.1
+ * @version 1.1.2
  */
 class Date
 {
@@ -25,14 +25,23 @@ class Date
     {
         // 日付要素取得
         $dateTime = $this->makeupDateFormat($dateTime);
-        $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
+        // $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
 
-        $year = $date['tm_year'] + 1900;
-        $month = $date['tm_mon'] + 1;
-        $day = $date['tm_mday'];
-        $hour = $date['tm_hour'] ? $date['tm_hour'] : '00';
-        $min = $date['tm_min'] ? $date['tm_min'] : '00';
-        $sec = $date['tm_sec'] ? $date['tm_sec'] : '00';
+        // $year = $date['tm_year'] + 1900;
+        // $month = $date['tm_mon'] + 1;
+        // $day = $date['tm_mday'];
+        // $hour = $date['tm_hour'] ? $date['tm_hour'] : '00';
+        // $min = $date['tm_min'] ? $date['tm_min'] : '00';
+        // $sec = $date['tm_sec'] ? $date['tm_sec'] : '00';
+
+        $date = date_parse_from_format($format,date($dateTime));
+
+        $year = $date['year'];
+        $month = $date['month'];
+        $day = $date['day'];
+        $hour = $date['hour'] ? $date['hour'] : '00';
+        $min = $date['minute'] ? $date['minute'] : '00';
+        $sec = $date['second'] ? $date['second'] : '00';
 
         // 指定された日数分移動
         $timeStamp = mktime($hour, $min, $sec, $month, $day, $year);
@@ -52,13 +61,13 @@ class Date
     {
         // 日付要素取得
         $dateTime = $this->makeupDateFormat($dateTime);
-        $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
+        $date = date_parse_from_format($format,date($dateTime));
 
-        $year = $date['tm_year'] + 1900;
-        $month = $date['tm_mon'] + 1;
-        $day = $date['tm_mday'];
-        $hour = $date['tm_hour'];
-        $min = $date['tm_min'];
+        $year = $date['year'];
+        $month = $date['month'];
+        $day = $date['day'];
+        $hour = $date['hour'];
+        $min = $date['minute'];
 
         // 指定された日数分移動
         $timeStamp = mktime($hour, $min, 0, $month, $day, $year);
@@ -78,11 +87,17 @@ class Date
     {
         // 日付要素取得
         $dateTime = $this->makeupDateFormat($dateTime);
-        $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
+        // $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
 
-        $year = $date['tm_year'] + 1900;
-        $month = $date['tm_mon'] + 1;
-        $day = $date['tm_mday'];
+        // $year = $date['tm_year'] + 1900;
+        // $month = $date['tm_mon'] + 1;
+        // $day = $date['tm_mday'];
+
+        $date = date_parse_from_format($format,date($dateTime));
+
+        $year = $date['year'];
+        $month = $date['month'];
+        $day = $date['day'];
 
         // 指定された月数分移動
         $month = $month + $interval;
@@ -126,23 +141,37 @@ class Date
 
             // 日数差
             $fromDateTime = $this->makeupDateFormat($fromDateTime);
-            $date = strptime(date($fromDateTime), "%Y-%m-%d %H:%M:%S");
-            $year = $date['tm_year'] + 1900;
-            $month = $date['tm_mon'] + 1;
-            $day = $date['tm_mday'];
-            $hour = $date['tm_hour'];
-            $min = $date['tm_min'];
-            $sec = $date['tm_sec'];
+            // $date = strptime(date($fromDateTime), "%Y-%m-%d %H:%M:%S");
+            // $year = $date['tm_year'] + 1900;
+            // $month = $date['tm_mon'] + 1;
+            // $day = $date['tm_mday'];
+            // $hour = $date['tm_hour'];
+            // $min = $date['tm_min'];
+            // $sec = $date['tm_sec'];
+            $date = date_parse_from_format('Y-m-d H:i:s',date($fromDateTime));
+            $year = $date['year'];
+            $month = $date['month'];
+            $day = $date['day'];
+            $hour = $date['hour'];
+            $min = $date['minute'];
+            $sec = $date['second'];
             $fromTimeStamp = mktime($hour, $min, $sec, $month, $day, $year);
 
             $toDateTime = $this->makeupDateFormat($toDateTime);
-            $date = strptime(date($toDateTime), "%Y-%m-%d %H:%M:%S");
-            $year = $date['tm_year'] + 1900;
-            $month = $date['tm_mon'] + 1;
-            $day = $date['tm_mday'];
-            $hour = $date['tm_hour'];
-            $min = $date['tm_min'];
-            $sec = $date['tm_sec'];
+            // $date = strptime(date($toDateTime), "%Y-%m-%d %H:%M:%S");
+            // $year = $date['tm_year'] + 1900;
+            // $month = $date['tm_mon'] + 1;
+            // $day = $date['tm_mday'];
+            // $hour = $date['tm_hour'];
+            // $min = $date['tm_min'];
+            // $sec = $date['tm_sec'];
+            $date = date_parse_from_format('Y-m-d H:i:s',date($toDateTime));
+            $year = $date['year'];
+            $month = $date['month'];
+            $day = $date['day'];
+            $hour = $date['hour'];
+            $min = $date['minute'];
+            $sec = $date['second'];
             $toTimeStamp = mktime($hour, $min, $sec, $month, $day, $year);
 
             $intervalTime = $toTimeStamp - $fromTimeStamp;
@@ -252,10 +281,15 @@ class Date
     {
         // 日付要素取得
         $dateTime = $this->makeupDateFormat($dateTime);
-        $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
+        // $date = strptime(date($dateTime), "%Y-%m-%d %H:%M:%S");
 
-        $year = $date['tm_year'] + 1900;
-        $month = $date['tm_mon'] + 1;
+        // $year = $date['tm_year'] + 1900;
+        // $month = $date['tm_mon'] + 1;
+
+        $date = date_parse_from_format('Y-m-d H:i:s',date($dateTime));
+
+        $year = $date['year'];
+        $month = $date['month'];
 
         // mktime関数で日付を0にして前月の末日を取得
         $date = mktime(0, 0, 0, $month + 1, 0, $year);
@@ -292,5 +326,3 @@ class Date
         return $fixedDate;
     }
 }
-
-/* End of file Tool_Date.php */
