@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.5.3
+ * @version 2.0.0
  */
 
 class DB
@@ -19,10 +19,11 @@ class DB
 
     private $_dbConfig;
     private $_connect;
+    private $_pdoStatement;
     private $_connectFlag;
     private $_query;
     private $_parameter;
-    private $_record;
+    private $_bulk;
     private $_returnCode;
     private $_affectedRows;
     private $_lastInsertId;
@@ -106,7 +107,39 @@ class DB
                 break;
 
             case 'INSERT':
+                // BulkInertのみ処理（通常のInsertはReplaceと統合）
+                if ($this->_bulk) {
+
+                    $item = '';
+                    foreach ($this->_bulk['items'] as $key => $value) {
+                        if ($item) {
+                            $item .= ',';
+                        }
+                        $item .= "`" . trim($value) . "`";
+                    }
+
+                    $tempQuery1 = '';
+                    foreach ($this->_bulk['values'] as $key => $value) {
+                        if ($tempQuery1) {
+                            $tempQuery1 .= ', ';
+                        }
+                        $tempQuery2 = '';
+                        foreach ($value as $key2 => $value2) {
+                            if ($tempQuery2) {
+                                $tempQuery2 .= ', ';
+                            }
+                            $tempQuery2 .= '?';
+                            $this->_parameter[] = $value2;
+                        }
+                        $tempQuery1 .= "($tempQuery2)";
+                    }
+
+                    $this->_query = $queryType . ' Into `' . $this->_table . '` (' . $item . ') Values ' . $tempQuery1;
+                    break;
+                }
+
             case 'REPLACE':
+                // Insert, Replaceを処理
                 $query .= $queryType . ' Into `' . $this->_table . '` ';
                 $tempQuery1 = '';
                 $tempQuery2 = '';
@@ -255,6 +288,9 @@ class DB
             // 静的プレースホルダを指定
             $this->_connect->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
+            // バッファ無効
+            $this->_connect->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
         } catch(PDOException $e) {
             echo "Connection failed: " . $e->getMessage();
             exit;
@@ -268,6 +304,8 @@ class DB
      */
     private function _error($query, $parameter = array())
     {
+        $error = '';
+
         if (FEGG_DEVELOPER) {
             if (!empty($this->_connect)) {
                 $error = $this->_connect->errorInfo();
@@ -281,7 +319,14 @@ class DB
         }
         $this->_close();
 
-        throw new Exception($this->_connect->errorInfo());
+        throw new Exception($error);
+    }
+
+
+    function _execute($query, $parameter)
+    {
+
+
     }
 
 
@@ -393,6 +438,7 @@ class DB
         $this->_group = null;
         $this->_order = null;
         $this->_limit = null;
+        $this->_bulk = null;
 
         // 接続フラグ
         $this->_connectFlag = false;
@@ -491,13 +537,10 @@ class DB
      */
     function all($index = '')
     {
-        $record = '';
+        $record = $this->_pdoStatement->fetchAll(PDO::FETCH_ASSOC);
+
         if ($index) {
-            if ($this->_record) {
-                $record = array_column($this->_record, null, $index);
-            }
-        } else {
-            $record = $this->_record;
+            $record = array_column($record, null, $index);
         }
 
         return $record;
@@ -514,13 +557,61 @@ class DB
      */
     function arr($keyName, $valueName)
     {
-        $tempRecord = $this->_record;
-        $record = array();
-        foreach ($tempRecord as $key => $value) {
+        $record = [];
+
+        foreach ($this->_pdoStatement->fetchAll(PDO::FETCH_ASSOC) as $key => $value) {
             $record[$value[$keyName]] = $value[$valueName];
         }
 
         return $record;
+    }
+
+
+    /**
+     * 操作項目設定
+     *
+     * Bulk Insert専用のメソッド
+     * item() メソッドのような複数回呼び出しはできず insert() メソッドと常にペアになる
+     *
+     *  item('item1, item2', [['item1' => 1, 'item2' => 2], ['item1' => 3, 'item2' => 4]])
+     *  item('item1, item2', [[1, 2], [3, 4]])
+     *
+     * @param mixed $query 複数項目の場合カンマ区切り
+     * @param mixed $parameter 連想配列の場合は$queryで指定した項目名と一致するもの、配列の場合は左から順に値を使用
+     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+    */
+    function bulk($query, $parameters)
+    {
+        $this->_bulk = [];
+        $this->_bulk['items'] = explode(',', $query);
+
+        foreach ($parameters as $parmKey => $parameter) {
+
+            if ($this->_isHash($parameter)) {
+
+                // パラメーターが連想配列の場合は要素名で一致させる
+                $value = [];
+                foreach ($this->_bulk['items'] as $itemId) {
+                    $itemId = trim($itemId);
+                    if (array_key_exists($itemId, $parameter)) {
+                        $value[] = $parameter[$itemId];
+                    } else {
+                        $value[] = '';
+                    }
+                }
+                $this->_bulk['values'][] = $value;
+
+            } else {
+
+                // パラメーターが配列の場合は順番に一致させる
+                $this->_bulk['values'][] = $parameter;
+
+            }
+
+        }
+
+
+        return $this;
     }
 
 
@@ -539,7 +630,7 @@ class DB
     /**
      * データ件数カウント
      * @param string $table 指定時：各メソッドで指定された値でquery構築、省略時：queryメソッドによるquery設定
-     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+     * @return int 件数
      */
     function count($table)
     {
@@ -552,10 +643,8 @@ class DB
         $this->_table = $table;
         $this->_buildQuery('count');
 
-        // クエリーを実行して、論理的に非接続状態にする
-        $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
-
-        return $this;
+        // 件数を取得
+        return $this->query($this->_query, $this->_parameter)->one('number_of_records');
     }
 
 
@@ -594,7 +683,7 @@ class DB
      */
     function escapeLikeKey($keyword, $front = '', $back = '')
     {
-        $replacedKeyword = preg_replace('/(?=[!_%])/', '!', $keyword);
+        $replacedKeyword = preg_replace('/(?=[!_%])/', '\\', $keyword);
         $replacedKeyword = $front . $replacedKeyword . $back;
 
         return $replacedKeyword;
@@ -602,37 +691,14 @@ class DB
 
 
     /**
-     * クエリー実行
-     * @param chainFlag True:メソッドチェーンに対応するための変換をする false:そのままQueryを実行
-     * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
+     * １レコードの取得
+     * @return Array カーソル行のレコード配列
      */
-    function execute()
+    function fetch()
     {
-        // クエリ種類の判定
-        if (preg_match('/^\s*select.+/i', $this->_query)) {
-
-            // データベースが明示的に指定されていなければ Slave へ接続
-            if (!$this->_connectFlag) {
-                $this->slaveServer();
-            }
-
-            // クエリーを実行して、論理的に非接続状態にする
-            $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
-
-        } else {
-
-            // データベースが明示的に指定されていなければ Master へ接続
-            if (!$this->_connectFlag) {
-                $this->masterServer();
-            }
-
-            // クエリーを実行して、論理的に非接続状態にする
-            $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
-
+        while ($row = $this->_pdoStatement->fetch(PDO::FETCH_ASSOC)) {
+            yield $row;
         }
-        $this->_initQuery();
-
-        return $this;
     }
 
 
@@ -665,16 +731,6 @@ class DB
         $query = vsprintf($query, $this->_parameter);
 
         return $query;
-    }
-
-
-    /**
-     * リターンコード取得
-     * @return int
-     */
-    function getReturnCode()
-    {
-        return $this->_returnCode;
     }
 
 
@@ -833,13 +889,10 @@ class DB
      */
     function one($item = '')
     {
-        $record = array();
-        if (is_array($this->_record)) {
-            $record = $this->_record;
-            $record = array_shift($record);
-        }
+        $record = $this->_pdoStatement->fetch(PDO::FETCH_ASSOC);
+
         if ($item) {
-            $record = isset($record[$item]) ? $record[$item] : '';
+            $record = $record[$item] ?? '';
         }
 
         return $record;
@@ -865,10 +918,57 @@ class DB
      * @param array $parameter
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
-    function query($query, $parameter = array())
+    function query($query, $parameter = [])
     {
         $this->_query = $query;
         $this->_parameter = $parameter;
+        $this->_affectedRows = 0;
+        $this->_lastInsertId = 0;
+
+        // クエリー実行
+        try {
+
+            // クエリ種類の判定
+            if (preg_match('/^\s*select.+/i', $this->_query)) {
+
+                // データベースが明示的に指定されていなければ Slave へ接続
+                if (!$this->_connectFlag) {
+                    $this->slaveServer();
+                }
+
+            } else {
+
+                // データベースが明示的に指定されていなければ Master へ接続
+                if (!$this->_connectFlag) {
+                    $this->masterServer();
+                }
+
+            }
+
+            $this->_pdoStatement = $this->_connect->prepare($query);
+
+            if (!is_array($parameter) || !$parameter) {
+
+                $this->_result = $this->_pdoStatement->execute();
+
+            } else {
+
+                $this->_result = $this->_pdoStatement->execute($parameter);
+
+            }
+
+            $this->_lastInsertId = $this->_connect->lastInsertId();
+            $this->_affectedRows = $this->_pdoStatement->rowCount();
+
+            $this->_initQuery();
+
+        } catch(PDOException $e) {
+
+            echo $e->getMessage( ) . "<br />\n";
+            echo "PDOException. (query: 1).<br />\n";
+            $this->_error($query, $parameter);
+
+        }
 
         return $this;
     }
@@ -926,8 +1026,8 @@ class DB
         $this->_table = $table;
         $this->_buildQuery('select');
 
-        // クエリーを実行して、論理的に非接続状態にする
-        $this->_record = $this->_fetchAll($this->_query, $this->_parameter);
+        // クエリーを実行
+        $this->query($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
@@ -1154,7 +1254,7 @@ class DB
                                 if ($tempQuery) {
                                     $tempQuery .= 'or ';
                                 }
-                                $tempQuery .= $itemName . ' Like ? Escape \'!\'';
+                                $tempQuery .= $itemName . ' Like ?';
                                 $this->_whereValues[] = $value;
                             }
                             $convertedQuery = $convertedQueryFrontPart . '(' . $tempQuery . ') ' . $convertedQuery;
