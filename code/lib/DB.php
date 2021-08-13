@@ -323,13 +323,6 @@ class DB
     }
 
 
-    function _execute($query, $parameter)
-    {
-
-
-    }
-
-
     /**
      * クエリ実行
      * @param string $query SQL文（パラメーター部分は?で表記）
