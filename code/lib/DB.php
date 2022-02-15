@@ -10,13 +10,14 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 class DB
 {
     private $_app;
 
+    private $_dbEngine;
     private $_dbConfig;
     private $_connect;
     private $_pdoStatement;
@@ -25,8 +26,12 @@ class DB
     private $_parameter;
     private $_bulk;
     private $_returnCode;
+    private $_record;
     private $_affectedRows;
     private $_lastInsertId;
+    private $_itemIdentifier;
+    private $_tableIdentifier;
+    private $_schema;
 
     private $_items;
     private $_table;
@@ -59,12 +64,23 @@ class DB
 
     /**
      * クエリー構築
-     * @param string $queryType
+     * @param string $queryType クエリタイプ（select, insert, update, delete, replace, delete, truncate）
+     * @param string $table テーブル名
      */
-    function _buildQuery($queryType) {
+    function _buildQuery($queryType, $table) {
 
+        $this->_table = $table;
         $this->_query = '';
         $this->_parameter = array();
+
+        // PostgreSQLはクエリ構築時にスキーマを確定させる必要があるためデータベースが明示的に指定されていなければ接続
+        if (!$this->_connectFlag) {
+            if (preg_match('/(select|count)/i', $queryType)) {
+                $this->slaveServer();
+            } else {
+                $this->masterServer();
+            }
+        }
 
         // 常用クエリーの設定
         if ($this->_regularUseQueryFlag) {
@@ -73,10 +89,11 @@ class DB
 
         $queryType = strtoupper($queryType);
         $query = '';
+        $tableName = $this->_schema ? "{$this->_schema}.{$this->_table}" : $this->_table;
         switch ($queryType) {
             case 'COUNT';
                 $query .= 'Select Count(*) as number_of_records ';
-                $query .= ' From `' . $this->_table . '` ';
+                $query .= " From {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} ";
                 $query .= isset($this->_where) ? 'Where ' . $this->_where : '';
                 $query .= isset($this->_group) ? ' Group By ' . $this->_group : '';
                 $this->_query = $query;
@@ -96,11 +113,11 @@ class DB
                     $query .= '*';
                 }
 
-                $query .= ' From `' . $this->_table . '` ';
+                $query .= " From {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} ";
                 $query .= isset($this->_where) ? 'Where ' . $this->_where : '';
                 $query .= isset($this->_group) ? ' Group By ' . $this->_group : '';
                 $query .= isset($this->_order) ? ' Order By ' . $this->_order : '';
-                $query .= isset($this->_limit) ? ' Limit ' . $this->_limit : '';
+                $query .= isset($this->_limit) ? $this->_limit : '';
 
                 $this->_query = $query;
                 $this->_parameter = $this->_whereValues;
@@ -115,7 +132,7 @@ class DB
                         if ($item) {
                             $item .= ',';
                         }
-                        $item .= "`" . trim($value) . "`";
+                        $item .= $this->_itemIdentifier . trim($value) . $this->_itemIdentifier;
                     }
 
                     $tempQuery1 = '';
@@ -134,13 +151,13 @@ class DB
                         $tempQuery1 .= "($tempQuery2)";
                     }
 
-                    $this->_query = $queryType . ' Into `' . $this->_table . '` (' . $item . ') Values ' . $tempQuery1;
+                    $this->_query = "{$queryType} Into {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} ({$item}) Values {$tempQuery1} ";
                     break;
                 }
 
             case 'REPLACE':
                 // Insert, Replaceを処理
-                $query .= $queryType . ' Into `' . $this->_table . '` ';
+                $query .= "{$queryType} Into {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} ";
                 $tempQuery1 = '';
                 $tempQuery2 = '';
                 foreach($this->_items as $key => $value) {
@@ -150,7 +167,7 @@ class DB
                         switch (true) {
                             case (preg_match('/^now/i', $match[2])):
                                 if ($tempQuery1) { $tempQuery1 .= ", "; }
-                                $tempQuery1 .= "`" . trim($match[1]) . "`";
+                                $tempQuery1 .= $this->_itemIdentifier . trim($match[1]) . $this->_itemIdentifier;
                                 if ($tempQuery2) { $tempQuery2 .= ", "; }
                                 $tempQuery2 .= '?';
                                 $this->_parameter[] = $this->_app->getDatetime();
@@ -158,7 +175,7 @@ class DB
 
                             default:
                                 if ($tempQuery1) { $tempQuery1 .= ", "; }
-                                $tempQuery1 .= "`" . trim($match[1]) . "`";
+                                $tempQuery1 .= $this->_itemIdentifier . trim($match[1]) . $this->_itemIdentifier;
                                 if ($tempQuery2) { $tempQuery2 .= ", "; }
                                 $tempQuery2 .= '?';
                                 $this->_parameter[] = $match[2];
@@ -169,7 +186,7 @@ class DB
 
                         // 項目名のみ
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
-                        $tempQuery1 .= "`" . trim($key) . "`";
+                        $tempQuery1 .= $this->_itemIdentifier . trim($key) . $this->_itemIdentifier;
 
                         if ($tempQuery2) { $tempQuery2 .= ", "; }
                         $tempQuery2 .= '?';
@@ -184,7 +201,7 @@ class DB
                 break;
 
             case 'UPDATE':
-                $query .= 'Update `' . $this->_table . '` Set ';
+                $query .= "Update {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} Set ";
                 $tempQuery1 = '';
                 foreach($this->_items as $key => $value) {
                     if (preg_match('/([^=]+)\s*=\s*([\w\(\)\+\-0-9\s\']+)/i', $key, $match)) {
@@ -207,7 +224,7 @@ class DB
 
                         // 項目名のみ
                         if ($tempQuery1) { $tempQuery1 .= ", "; }
-                        $tempQuery1 .= "`" . trim($key) . "`" . '= ?';
+                        $tempQuery1 .= $this->_itemIdentifier . trim($key) . $this->_itemIdentifier . '= ?';
 
                         $this->_parameter[] = $value;
                     }
@@ -227,7 +244,7 @@ class DB
             case 'DELETE':
 
                 $query = 'Delete ';
-                $query .= 'From ' . $this->_table . ' ';
+                $query .= " From {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} ";
                 $query .= $this->_where ? 'Where ' . $this->_where : '';
                 foreach ($this->_whereValues as $key => $value) {
                     $this->_parameter[] = $value;
@@ -238,7 +255,7 @@ class DB
 
             case 'TRUNCATE':
 
-                $query = 'Truncate ' . $this->_table . ' ';
+                $query = "Truncate {$this->_tableIdentifier}{$tableName}{$this->_tableIdentifier} ";
 
                 $this->_query = $query;
                 break;
@@ -268,18 +285,50 @@ class DB
      * @param string $dsn データソース名
      * @param string $user ユーザー
      * @param string $password パスワード
+     * @param string $schema スキーマ（PostgreSQL用）
      */
-    function _connect($dsn, $user, $password)
+    function _connect($dsn, $user, $password, $schema)
     {
+        // データベース判定
+        if (preg_match('/^([a-z]+):/', $dsn, $matches)) {
+            $this->_dbEngine = strtolower($matches[1]);
+        }
+        if($this->_dbEngine != 'mysql' && $this->_dbEngine != 'pgsql') {
+            echo "Connection failed: Non-Suported DB Engline.";
+            exit;
+        }
+
         // 接続
         try {
-            if (defined('PDO::MYSQL_ATTR_READ_DEFAULT_FILE')) {
-                $options = array(
-                    PDO::MYSQL_ATTR_READ_DEFAULT_FILE  => '/etc/my.cnf',
-                );
-                $this->_connect = new PDO($dsn, $user, $password, $options);
-            } else {
-                $this->_connect = new PDO($dsn, $user, $password);
+            switch ($this->_dbEngine) {
+                case 'mysql':
+                    if (defined('PDO::MYSQL_ATTR_READ_DEFAULT_FILE')) {
+                        $options = array(
+                            PDO::MYSQL_ATTR_READ_DEFAULT_FILE  => '/etc/my.cnf',
+                        );
+                        $this->_connect = new PDO($dsn, $user, $password, $options);
+                    } else {
+                        $this->_connect = new PDO($dsn, $user, $password);
+                    }
+
+                    // バッファ無効
+                    $this->_connect->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+                    // 項目区切り文字
+                    $this->_itemIdentifier = '`';
+                    $this->_tableIdentifier = '`';
+
+                    break;
+
+                case 'pgsql':
+                    $this->_connect = new PDO($dsn, $user, $password);
+
+                    // 項目区切り文字
+                    $this->_itemIdentifier = '"';
+                    $this->_tableIdentifier = '';
+                    $this->_schema = $schema;
+
+                    break;
             }
 
             // 例外をスロー
@@ -287,9 +336,6 @@ class DB
 
             // 静的プレースホルダを指定
             $this->_connect->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-
-            // バッファ無効
-            $this->_connect->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
         } catch(PDOException $e) {
             echo "Connection failed: " . $e->getMessage();
@@ -324,97 +370,11 @@ class DB
 
 
     /**
-     * クエリ実行
-     * @param string $query SQL文（パラメーター部分は?で表記）
-     * @param array $parameter パラメーター配列（SQL中の?の順序に合わせる）
-     * @return boolean 正常時: True 異常時: False
+     * 結果全件を保持
      */
-    function _executeQuery($query, $parameter)
+    function _fetchAll()
     {
-        // 結果格納変数の初期化
-        $this->_affectedRows = 0;
-
-        // クエリー実行
-        try {
-            $pdoStatement = $this->_connect->prepare($query);
-
-            if ($pdoStatement) {
-                if (!is_array($parameter)) {
-                    $result = $pdoStatement->execute();
-                } else {
-                    $result = $pdoStatement->execute($parameter);
-                }
-                $this->_lastInsertId = $this->_connect->lastInsertId();
-            } else {
-                echo "No PDOStatemant. (_executeQuery: 1).<br />\n";
-                $this->_error($query, $parameter);
-            }
-
-        } catch(PDOException $e) {
-            echo $e->getMessage( ) . "<br />\n";
-            echo "PDOException. (_executeQuery: 2).<br />\n";
-            $this->_error($query, $parameter);
-        }
-
-        if ($result) {
-
-            // 結果行数の格納
-            $this->_affectedRows = $pdoStatement->rowCount();
-
-        } else {
-            echo "No Result. (_executeQuery: 3).<br />\n";
-            $this->_error($query);
-         }
-
-        return $this->_affectedRows;
-    }
-
-
-    /**
-     * データ取得
-     * @param string $query SQL文（パラメーター部分は?で表記）
-     * @param array $parameter パラメーター配列（SQL中の?の順序に合わせる）
-     * @return array 結果を配列で返す。項目名による連想配列。
-     */
-    function _fetchAll($query, $parameter)
-    {
-        // 結果格納変数の初期化
-        $this->_affectedRows = 0;
-        $record = array();
-
-        // クエリー実行
-        try {
-            $pdoStatement = $this->_connect->prepare($query);
-
-            if ($pdoStatement) {
-                if (!is_array($parameter)) {
-                    $result = $pdoStatement->execute();
-                } else {
-                    $result = $pdoStatement->execute($parameter);
-                }
-            } else {
-                echo 'No PDOException. Checkpoint 1.';
-                $this->_error($query);
-            }
-
-        } catch(PDOException $e) {
-            $this->_error($query);
-        }
-
-        if ($result) {
-
-            // 結果行数の格納
-            $this->_affectedRows = $pdoStatement->rowCount();
-
-            // 取得行数文繰り返し$recordに格納
-            $record = $pdoStatement->fetchAll(PDO::FETCH_ASSOC);
-
-        } else { $this->_error($query); }
-
-        // メモリを解放
-        $pdoStatement->closeCursor();
-
-        return $record;
+        $this->_record = !$this->_record ? $this->_pdoStatement->fetchAll(PDO::FETCH_ASSOC) : $this->_record;
     }
 
 
@@ -447,15 +407,10 @@ class DB
      * @param array 判定対象の配列
      * @return boolean true: 連想配列 false: 配列
      */
-    function _isHash($array)
+    function _isHash($param)
     {
         // 連想配列の先頭キーに0は使えず、配列の先頭は0という前提
-        foreach ($array as $key => $value) {
-            // 先頭のキーを取得
-            break;
-        }
-
-        return $key !== 0;
+        return array_key_first($param) !== 0;
     }
 
 
@@ -530,16 +485,10 @@ class DB
      */
     function all($index = '')
     {
-        $record = $this->_pdoStatement->fetchAll(PDO::FETCH_ASSOC);
+        $this->_fetchAll();
 
-        if ($index) {
-            $record = array_column($record, null, $index);
-        }
-
-        return $record;
+        return !$index ? $this->_record : array_column($this->_record, null, $index);
     }
-
-
 
 
     /**
@@ -550,9 +499,10 @@ class DB
      */
     function arr($keyName, $valueName)
     {
-        $record = [];
+        $this->_fetchAll();
 
-        foreach ($this->_pdoStatement->fetchAll(PDO::FETCH_ASSOC) as $key => $value) {
+        $record = [];
+        foreach ($this->_record as $key => $value) {
             $record[$value[$keyName]] = $value[$valueName];
         }
 
@@ -600,9 +550,7 @@ class DB
                 $this->_bulk['values'][] = $parameter;
 
             }
-
         }
-
 
         return $this;
     }
@@ -627,14 +575,8 @@ class DB
      */
     function count($table)
     {
-        // データベースが明示的に指定されていなければ Slave へ接続
-        if (!$this->_connectFlag) {
-            $this->slaveServer();
-        }
-
-        // テーブル名が指定されているときはメソッドで指定された値でquery構築
-        $this->_table = $table;
-        $this->_buildQuery('count');
+        // query構築
+        $this->_buildQuery('count', $table);
 
         // 件数を取得
         return $this->query($this->_query, $this->_parameter)->one('number_of_records');
@@ -648,17 +590,11 @@ class DB
      */
     function delete($table = '')
     {
-        // データベースが明示的に指定されていなければ Slave へ接続
-        if (!$this->_connectFlag) {
-            $this->masterServer();
-        }
-
         // query構築
-        $this->_table = $table;
-        $this->_buildQuery('delete');
+        $this->_buildQuery('delete', $table);
 
         // クエリーを実行して、論理的に非接続状態にする
-        $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
+        $this->_returnCode = $this->query($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
@@ -692,6 +628,7 @@ class DB
         while ($row = $this->_pdoStatement->fetch(PDO::FETCH_ASSOC)) {
             yield $row;
         }
+        $this->_pdoStatement->closeCursor();
     }
 
 
@@ -709,7 +646,7 @@ class DB
      * 直近で登録されたオートナンバーの取得
      * @return Integer 取得できなかったときは0を返す
      */
-    function getLastIndexId()
+    function getLastId()
     {
         return $this->_lastInsertId;
     }
@@ -718,10 +655,12 @@ class DB
     /**
      * 最後に実行したクエリーの取得
      */
-    function getLastQuery()
+    function getQuery()
     {
         $query = str_replace('?', '%s', $this->_query);
-        $query = vsprintf($query, $this->_parameter);
+        if ($this->_parameter) {
+            $query = vsprintf($query, $this->_parameter);
+        }
 
         return $query;
     }
@@ -747,9 +686,11 @@ class DB
      */
     function id($index)
     {
-        $ids = '';
-        if ($this->_record) {
-            $ids = array_column($this->_record, $index, $index);
+        $this->_fetchAll();
+
+        $ids = [];
+        foreach ($this->_record as $key => $value) {
+            $ids[$value[$index]] = $value[$index];
         }
 
         return $ids;
@@ -763,17 +704,11 @@ class DB
      */
     function insert($table)
     {
-        // データベースが明示的に指定されていなければ Master へ接続
-        if (!$this->_connectFlag) {
-            $this->masterServer();
-        }
-
         // query構築
-        $this->_table = $table;
-        $this->_buildQuery('insert');
+        $this->_buildQuery('insert', $table);
 
         // クエリーを実行して、論理的に非接続状態にする
-        $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
+        $this->_returnCode = $this->query($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
@@ -843,12 +778,12 @@ class DB
     /**
      * 取得件数設定
      * @param int $limit
-     * @param int $offset
+     * @param int $offset MySQLは1始まりでPostgreSQLは0始まり差異があるためPostgresSQLの場合は-1する
      * @return DB メソッドチェーンに対応するため自身のオブジェクト($this)を返す
      */
     function limit($limit, $offset = 0)
     {
-        $this->_limit = $offset . ',' . $limit;
+        $this->_limit = " Limit {$limit} Offset {$offset}";
 
         return $this;
     }
@@ -866,7 +801,8 @@ class DB
             // 接続
             $this->_connect($this->_app->config[$this->_dbConfig]['master']['dsn'],
                             $this->_app->config[$this->_dbConfig]['master']['username'],
-                            $this->_app->config[$this->_dbConfig]['master']['password']
+                            $this->_app->config[$this->_dbConfig]['master']['password'],
+                            $this->_app->config[$this->_dbConfig]['master']['schema'] ?? ''
             );
             $this->_connectFlag = true;
         }
@@ -883,12 +819,9 @@ class DB
     function one($item = '')
     {
         $record = $this->_pdoStatement->fetch(PDO::FETCH_ASSOC);
+        $this->_pdoStatement->closeCursor();
 
-        if ($item) {
-            $record = $record[$item] ?? '';
-        }
-
-        return $record;
+        return !$item ? $record : $record[$item] ?? '';
     }
 
 
@@ -915,55 +848,60 @@ class DB
     {
         $this->_query = $query;
         $this->_parameter = $parameter;
+        $this->_record = [];
         $this->_affectedRows = 0;
         $this->_lastInsertId = 0;
 
-        // クエリー実行
         try {
 
-            // クエリ種類の判定
-            if (preg_match('/^\s*select.+/i', $this->_query)) {
-
-                // データベースが明示的に指定されていなければ Slave へ接続
-                if (!$this->_connectFlag) {
+            // データベースが明示的に指定されていなければ接続
+            if (!$this->_connectFlag) {
+                if (preg_match('/^\s*(select|count).+/i', $this->_query)) {
                     $this->slaveServer();
-                }
-
-            } else {
-
-                // データベースが明示的に指定されていなければ Master へ接続
-                if (!$this->_connectFlag) {
+                } else {
                     $this->masterServer();
                 }
-
             }
 
-            $this->_pdoStatement = $this->_connect->prepare($query);
+            if ($this->_pdoStatement = $this->_connect->prepare($query)) {
 
-            if (!is_array($parameter) || !$parameter) {
+                // クエリ実行
+                if (!is_array($parameter) || !$parameter) {
+                    $this->_result = $this->_pdoStatement->execute();
+                } else {
+                    $this->_result = $this->_pdoStatement->execute($parameter);
+                }
 
-                $this->_result = $this->_pdoStatement->execute();
+                // 結果処理
+                if ($this->_result) {
+
+                    switch (true) {
+                        case preg_match('/^\s*(insert).+/i', $this->_query):
+                            $this->_lastInsertId = $this->_connect->lastInsertId();
+                            break;
+
+                        case preg_match('/^\s*(update).+/i', $this->_query):
+                            $this->_affectedRows = $this->_pdoStatement->rowCount();
+                            break;
+                    }
+
+                    return $this;
+
+                } else {
+                    echo "No Result.<br />\n";
+                    $this->_error($query);
+                }
 
             } else {
-
-                $this->_result = $this->_pdoStatement->execute($parameter);
-
+                echo "No PDOStatemant.<br />\n";
+                $this->_error($query, $parameter);
             }
 
-            $this->_lastInsertId = $this->_connect->lastInsertId();
-            $this->_affectedRows = $this->_pdoStatement->rowCount();
-
-            $this->_initQuery();
-
         } catch(PDOException $e) {
-
             echo $e->getMessage( ) . "<br />\n";
-            echo "PDOException. (query: 1).<br />\n";
+            echo "PDO Exception.<br />\n";
             $this->_error($query, $parameter);
-
         }
-
-        return $this;
     }
 
 
@@ -974,17 +912,11 @@ class DB
      */
     function replace($table)
     {
-        // データベースが明示的に指定されていなければ Master へ接続
-        if (!$this->_connectFlag) {
-            $this->masterServer();
-        }
-
         // query構築
-        $this->_table = $table;
-        $this->_buildQuery('replace');
+        $this->_buildQuery('replace', $table);
 
         // クエリーを実行して、論理的に非接続状態にする
-        $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
+        $this->_returnCode = $this->query($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
@@ -1010,14 +942,8 @@ class DB
      */
     function select($table)
     {
-        // データベースが明示的に指定されていなければ Slave へ接続
-        if (!$this->_connectFlag) {
-            $this->slaveServer();
-        }
-
-        // テーブル名が指定されているときはメソッドで指定された値でquery構築
-        $this->_table = $table;
-        $this->_buildQuery('select');
+        // query構築
+        $this->_buildQuery('select', $table);
 
         // クエリーを実行
         $this->query($this->_query, $this->_parameter);
@@ -1048,7 +974,8 @@ class DB
             // 接続
             $this->_connect($this->_app->config[$this->_dbConfig]['slave'][$serverNo]['dsn'],
                             $this->_app->config[$this->_dbConfig]['slave'][$serverNo]['username'],
-                            $this->_app->config[$this->_dbConfig]['slave'][$serverNo]['password']
+                            $this->_app->config[$this->_dbConfig]['slave'][$serverNo]['password'],
+                            $this->_app->config[$this->_dbConfig]['slave'][$serverNo]['schema'] ?? ''
                     );
             $this->_connectFlag = true;
         }
@@ -1079,17 +1006,12 @@ class DB
 
     function truncate($table)
     {
-        // データベースが明示的に指定されていなければ Slave へ接続
-        if (!$this->_connectFlag) {
-            $this->slaveServer();
-        }
-
-        // テーブル名が指定されているときはメソッドで指定された値でquery構築
+        // query構築
         $this->_table = $table;
-        $this->_buildQuery('truncate');
+        $this->_buildQuery('truncate', $table);
 
         // クエリーを実行して、論理的に非接続状態にする
-        $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
+        $this->_returnCode = $this->query($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
@@ -1127,17 +1049,11 @@ class DB
      */
     function update($table)
     {
-        // データベースが明示的に指定されていなければ Slave へ接続
-        if (!$this->_connectFlag) {
-            $this->masterServer();
-        }
-
         // query構築
-        $this->_table = $table;
-        $this->_buildQuery('update');
+        $this->_buildQuery('update', $table);
 
         // クエリーを実行して、論理的に非接続状態にする
-        $this->_returnCode = $this->_executeQuery($this->_query, $this->_parameter);
+        $this->_returnCode = $this->query($this->_query, $this->_parameter);
         $this->_initQuery();
 
         return $this;
@@ -1189,11 +1105,10 @@ class DB
                     // like --> or 区切り
 
                     // 変換位置の確定
-                    preg_match_all('/([\w`]+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*[\?,]+\s*\)?)/i', $query, $matches, PREG_OFFSET_CAPTURE);
+                    preg_match_all("/([\w{$this->_itemIdentifier}]+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*[\?,]+\s*\)?)/i", $query, $matches, PREG_OFFSET_CAPTURE);
                     $position = $matches[0][$index][1];
 
                     // 演算子の確定
-                    // preg_match_all('/(\w+\s*(=|<|>|<=|>=|<>|like|in)\s*\(?\s*\?\s*\)?)/i', $query, $matches, PREG_PATTERN_ORDER);
                     $operator = $matches[2][$index][0];
 
                     // 対象箇所までのクエリー取得
@@ -1205,13 +1120,13 @@ class DB
                     }
 
                     // 項目名取得
-                    $pattern = '/^\s*`?(\w+)`?/i';
+                    $pattern = "/^\s*{$this->_itemIdentifier}?(\w+){$this->_itemIdentifier}?/i";
                     preg_match($pattern, $convertedQuery, $matches);
                     $itemName = $matches[1];
-                    $itemName = '`' . $itemName . '`';
+                    $itemName = $this->_itemIdentifier . $itemName . $this->_itemIdentifier;
 
                     // 対象箇所からのクエリー取得
-                    $convertedQuery = preg_replace('/^\s*[\w`]+\s*' . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
+                    $convertedQuery = preg_replace("/^\s*[\w{$this->_itemIdentifier}]+\s*" . $operator . '\s*\(?\s*\?\s*\)?(.*)/', '$1', $convertedQuery);
 
                     $tempQuery = '';
                     $operator = strtolower($operator);
