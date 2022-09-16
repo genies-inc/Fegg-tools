@@ -75,6 +75,8 @@
   2017/07/10 makeupDateFormat()の対応日付形式を拡張
 
 /code/lib/Tool/File.php
+- 1.4.0
+  2022/09/16 getDirectoryメソッド追加
 - 1.3.1
   2020/05/11 writeFile()のエラートラップを追加
 - 1.3.0

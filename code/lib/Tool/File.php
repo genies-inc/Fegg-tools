@@ -6,7 +6,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.3.1
+ * @version 1.4.0
  */
 class File
 {
@@ -100,6 +100,35 @@ class File
                 chmod($directory, octdec($permission));
             }
         }
+    }
+
+
+    /**
+     * ディレクトリの読込み
+     * @param string $directory 親ディレクトリのパス
+     * @return array ディレクトリ名の配列
+     */
+    function getDirectory($parentDirectory)
+    {
+        $directory = [];
+
+        if (is_dir($parentDirectory)) {
+            if ($handle = opendir($parentDirectory)) {
+                while (($item = readdir($handle)) !== false) {
+
+                    if ($item == "." || $item == "..") {
+                        continue;
+                    }
+
+                    if (is_dir($parentDirectory . "/" . $item)) {
+                        $directory[] = $item;
+                    }
+                }
+                closedir($handle);
+            }
+        }
+
+        return $directory;
     }
 
 
