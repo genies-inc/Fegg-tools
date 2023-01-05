@@ -6,7 +6,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.2
+ * @version 1.1.3
  */
 class Date
 {
@@ -101,6 +101,17 @@ class Date
 
         // 指定された月数分移動
         $month = $month + $interval;
+        switch ($month) {
+            case 0:
+                $year =  $year - 1;
+                $month = 12;
+                break;
+
+            case 13:
+                $year =  $year + 1;
+                $month = 1;
+                break;
+        }
 
         // 最終日取得
         $lastDay = $this->getTheLastday(sprintf("%04d%02d", $year, $month));
