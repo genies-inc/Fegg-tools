@@ -10,7 +10,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 class DB
@@ -274,9 +274,9 @@ class DB
      */
     function _close()
     {
-        if ($this->_connect) {
-            $this->_connect = null;
-        }
+        $this->_result = null;
+        $this->_pdoStatement = null;
+        $this->_connect = null;
     }
 
 
@@ -580,6 +580,15 @@ class DB
 
         // 件数を取得
         return $this->query($this->_query, $this->_parameter)->one('number_of_records');
+    }
+
+
+    /**
+     * DBサーバーとの接続切断
+     */
+    function close()
+    {
+        $this->_close();
     }
 
 
