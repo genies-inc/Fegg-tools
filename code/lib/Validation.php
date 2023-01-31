@@ -7,7 +7,7 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.3.0
+ * @version 1.3.1
  */
 class Validation {
 
@@ -166,7 +166,7 @@ class Validation {
 
         // 検証
         $flag = false;
-        if (preg_match('/^[-\+\w](\\.?[-\+\w])*@[-\+\w]+(\.[-\+\w]+)*(\.[a-zA-Z]{2,4})$/', $value)) {
+        if (preg_match('/^[-\+\w](\\.?[-\+\w])*@[-\+\w]+(\.[-\+\w]+)*(\.[a-zA-Z]{2,5})$/', $value)) {
 
             $flag = true;
 

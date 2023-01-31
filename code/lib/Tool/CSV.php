@@ -6,10 +6,12 @@
  *
  * @access public
  * @author Genies, Inc.
- * @version 1.1.2
+ * @version 1.2.0
  */
 class CSV
 {
+    private $_detectedCharCode = '';
+
     function __construct()
     {
     }
@@ -48,6 +50,10 @@ class CSV
         }
 
         if (trim($line) != "") {
+
+            if (!$this->_detectedCharCode) {
+                $this->_detectedCharCode = mb_detect_encoding($line, "sjis-win, utf-8");
+            }
 
             // 末尾の改行をカンマに置換（この後の処理のため）
             $line = preg_replace('/(?:\r\n|[\r\n])?$/', '', trim($line));
@@ -148,6 +154,11 @@ class CSV
 
             // 1行取得
             $arrItem = $this->_fgetcsv($filePointer);
+
+            // 文字コード設定
+            if ($fromEncoding == 'auto' && $this->_detectedCharCode) {
+                $fromEncoding = $this->_detectedCharCode;
+            }
 
             $lineCounter = 0;
 
