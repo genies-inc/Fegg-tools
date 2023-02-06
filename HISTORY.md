@@ -71,6 +71,8 @@
   2018/04/16 arrayToCSVメソッド追加
 
 /code/lib/Tool/Date.php
+- 1.1.4
+  2023/02/06 date_parse_from_formatへの変更に起因するバグ修正
 - 1.1.3
   2023/01/05 addMonth()のバグ修正
 - 1.1.2
